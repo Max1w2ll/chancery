@@ -39,6 +39,8 @@ export default {
     --left-side-background: #060a10;
     --left-side-scrollbar-track: #273a52;
     --left-side-scrollbar-thumb: #9b9b9b;
+
+    --deleteButton-background: #781c1c;
   }
 
   body {

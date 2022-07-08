@@ -9,39 +9,144 @@
                 </div>
             </div>
             <div class="ordersList">
-                <div class="order">
+                <div class="order" v-for="order in ordersList" :key="order" @click="selectedOrderId = order.id; getOrderByID();">
                     <div class="header">
-                        <p class="number"> Заказ #[0000] </p>
-                        <p class="date"> 7 июня 12:12 </p>
+                        <p class="number"> Заказ ID: {{order.id}} </p>
+                        <p class="date"> {{order.createdAt.slice(0,10).replace(/-/g,".")}} </p>
                     </div>
                     <div class="productsAndStatus">
-                        <p class="products"> Товар #1, Товар #2, Товар #3, Товар #4, Товар #5,  Товар #6, Товар #7 </p>
-                        <p class="status"> Ожидает одобрения </p>
+                        <div class="productsList"> 
+                            <p class="productsName" v-for="product in order.positions" :key="product"> {{product.name}} </p>
+                        </div>
+                        <p class="status"> {{order.status}} </p>
                     </div>
                 </div>
             </div>
-            <button class="createOrderButton"> Новый заказ +</button>
+            <button class="createOrderButton"> Новый заказ + </button>
         </div>
 
         <!-- Center, right side -->
-        <div class="editor">
+        <div class="editor" v-if="selectedOrderId != undefined">
             <div class="title">
-                <p> Заказ #[0000] </p>
+                <p> Заказ ID: {{order.id}} </p>
+                <button class="closeEditorButton" @click="selectedOrderId = undefined"> ✖ </button>
             </div>
             <div class="productList">
-                <div class="product">
-                    <input class="name" placeholder="Название товара">
-                    <input class="link" placeholder="Ссылка на товар">
+                <div class="product" v-for="product in order.positions" :key="product">
+                    <textarea class="name" placeholder="Название товара" v-model="product.name"></textarea>
+                    <div class="productInfo">
+                        <textarea class="link"    placeholder="Ссылка на товар" v-model="product.link"></textarea>
+                        <br>
+                        <textarea class="desc"    placeholder="Описание"        v-model="product.description"></textarea>
+                        <br>
+                        <textarea class="count"   placeholder="Количество"      v-model="product.count"></textarea>
+                        <textarea class="article" placeholder="Артикль"         v-model="product.article"></textarea>
+                    </div>
                 </div>
             </div>
-            <button class="sendButton"> Оформить заказ</button>
+            <textarea id="usernameTo" class="usernameTo" placeholder="Для кого заказ (если не будет заполнено, будет введено ваше имя)"></textarea>
+            <div class="buttons">
+                <button class="sendButton" @click="EditOrderByID()"> Обновить </button>
+                <button class="deleteButton" @click="DeleteOrderByID();"> Удалить заказ </button>
+            </div>
+        </div>
+        <div class="nothingSelected" v-if="selectedOrderId == undefined">
+            <div class="textAndImage">
+                <img src="../assets/icons/nothingSelected.png" width="64" height="64">
+                <p> Заказ не выбран! </p>
+                <p> Выберите товар из списка, или создайте новый. </p>
+            </div>
         </div>
     </div>
 </template>
 
 <script>
+import axios from 'axios';
+
 export default {
-  name: 'Main',
+    name: 'Main',
+    
+    data() {
+        return {
+            // Get all orders
+            getOrdersLink: 'http://localhost:3001/api/user/orders',
+
+            ordersList: () => [],
+
+            // Get one order by ID
+            getOrderByIdLink: 'http://localhost:3001/api/user/orders/',
+
+            selectedOrderId: undefined,
+            order: () => [],
+        }
+    },
+
+    methods: {
+        getOrders() {
+            axios.get(this.getOrdersLink, { withCredentials: true })
+            .then((res) => {
+                this.ordersList = res.data.orders;
+                console.log(this.ordersList);
+            });
+        },
+
+        getOrderByID() {
+            axios.get(this.getOrderByIdLink+this.selectedOrderId, { withCredentials: true })
+            .then((res) => {
+                this.order = res.data;
+                console.log(res);
+            });
+        },
+
+        EditOrderByID() {
+            let positions = [];
+            positions.name = "positions"
+
+            // We count the number of products in the order
+            let productList = document.getElementsByClassName('product'); 
+            
+            // Loop through the elements and take the values from each product elemnt
+            for (let productCounter = 0; productCounter < productList.length; productCounter++) {
+                let product = {
+                    "name":        productList[productCounter].childNodes[0].value,                // Product name
+                    "link":        productList[productCounter].childNodes[1].childNodes[0].value,  // Product link
+                    "description": productList[productCounter].childNodes[1].childNodes[2].value,  // Product description
+                    "article":     productList[productCounter].childNodes[1].childNodes[4].value,  // Product count
+                    "count":       productList[productCounter].childNodes[1].childNodes[5].value   // Product count
+                }
+                positions.push(product);
+            }
+
+            let usernameTo = document.getElementById('usernameTo').value;
+            if (usernameTo == "") {
+                usernameTo = document.getElementById('username').innerHTML;
+            }
+
+            let data = {positions, usernameTo};
+            console.log(JSON.stringify(data));
+
+            axios.patch(this.getOrderByIdLink+this.selectedOrderId, JSON.stringify(data), { withCredentials: true })
+            .then((res) => {
+                console.log(res);
+            });
+        },
+
+        DeleteOrderByID() {
+            axios.delete(this.getOrderByIdLink+this.selectedOrderId, { withCredentials: true })
+            .then((res) => {
+                this.selectedOrderId = undefined;
+
+                this.order = res.data;
+                console.log(res);
+
+                this.getOrders();
+            });
+        }
+    },
+
+    mounted() {
+        this.getOrders();
+    }
 }
 </script>
 
@@ -160,7 +265,7 @@ export default {
     .order .header p {
         padding: 0px 0px 0px 20px;
 
-        font-family: var(--sub-font);
+        font-family: var(--main-font);
         font-size: 14px;
     }
 
@@ -168,11 +273,10 @@ export default {
         height: 60px;
         width: 270px;
     }
-    .productsAndStatus .products {
+    .productsAndStatus .productsList {
         margin: 0;
-        padding: 10px 20px 0px 20px;
-
-        height: 14px;
+        padding: 0px 20px 0px 20px;
+        display: flex;
 
         font-size: 12px;
         white-space: nowrap;
@@ -180,9 +284,12 @@ export default {
         text-overflow: ellipsis;
 
         color: var(--text-color-hover);
+    }
+    .productsAndStatus .productsName {
+        margin-right: 10px;
     } 
     .productsAndStatus .status {
-        padding: 10px 20px 0px 20px;
+        padding: 0px 20px 0px 20px;
 
         margin: 0;
 
@@ -235,13 +342,38 @@ export default {
     }
 
     .editor .title {
+        display: flex;
+
         color: var(--text-color);
+    }
+    .editor .title .closeEditorButton {
+        margin-top: 20px;
+        right: 30px;
+
+        position: absolute;
+    
+        height: 30px;
+        width: 30px;
+
+        border: 0;
+
+        font-size: 18px;
+
+        color: var(--text-color);
+        background: none;
+
+        cursor: pointer;
+
+        transition: .3s;
+    }
+    .editor .title .closeEditorButton:hover {
+        color: var(--text-color-hover);
     }
     .editor .title p {
         margin: 30px;
 
         font-family: var(--main-font);
-        font-size: 18px;
+        font-size: 24px;
     }
 
     .editor .productList {
@@ -251,6 +383,9 @@ export default {
         width: 100%;
     }
     .productList .product {
+        margin-bottom: 20px;
+        padding-bottom: 20px;
+
         overflow-x: hidden;
 
         min-height: 60px;
@@ -258,12 +393,20 @@ export default {
 
         background: var(--left-side-background);
     }
-    .productList .product input {
+    .productList .product .productInfo{
+        margin-left: 50px;
+    }
+    .productList .product textarea {
         all: unset;
 
-        margin: 20px;
+        margin: 20px 0px 0px 20px;
 
-        border-bottom: 1px solid white;
+        resize: none;
+
+        height: 20px;
+
+        border: none;
+        border-bottom: 1px solid rgb(150, 150, 150);
 
         font-family: var(--main-font);
         font-size: 16px;
@@ -272,10 +415,44 @@ export default {
         background: transparent;
     }
     .productList .product .name {
+        margin-bottom: 5px;
+
+        height: 28px;
         width: 500px;
+
+        font-size: 22px;
     }
     .productList .product .link {
         width: 900px;
+    }
+    .productList .product .desc {
+        width: 900px;
+    }
+    .productList .product .count {
+        width: 100px;
+    }
+    .productList .product .article {
+        width: 100px;
+    }
+
+    .editor .usernameTo {
+        all: unset;
+
+        margin: 20px 0px 40px 30px;
+
+        resize: none;
+
+        height: 28px;
+        width: 970px;
+
+        border: none;
+        border-bottom: 1px solid rgb(150, 150, 150);
+
+        font-family: var(--main-font);
+        font-size: 22px;
+
+        color: var(--text-color);
+        background: transparent;
     }
 
     .editor .sendButton {
@@ -301,5 +478,44 @@ export default {
         -webkit-transform: scale(1.1);
     }
 
+    .editor .deleteButton {
+        all: unset;
+
+        margin-left: 30px;
+
+        height: 30px;
+        width: 200px;
+
+        font-family: var(--sub-font);
+        font-size: 16px;
+        text-align: center;
+
+        color: var(--text-color);
+        background: var(--deleteButton-background);
+
+        cursor: pointer;
+
+        transition: .3s;
+    }
+    .editor .deleteButton:hover {
+        -webkit-transform: scale(1.1);
+    }
+
+    .mainSection .nothingSelected {
+        overflow-y: hidden;
+        overflow-x: hidden;
+
+        height: 100%;
+        width: 100%;
+
+        font-family: var(--main-font);
+        font-size: 18px;
+        text-align: center;
+
+        color: var(--text-color);
+    }
+    .nothingSelected .textAndImage {
+        margin-top: 70px;
+    }
 
 </style>

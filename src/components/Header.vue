@@ -6,16 +6,61 @@
         </div>
 
         <div class="userSection">
-            <p class="userName"> Фамилия И.О. </p>
+            <p id="username" class="username"> {{displayName}} </p>
             <p class="logOut"> Выйти </p>
         </div>
     </div>
 </template>
 
 <script>
+import axios from 'axios';
+
 export default {
-  name: 'Header',
+    name: 'Header',
+
+    data() {
+        return {
+            // Authentication
+            authLink: 'http://localhost:3000/auth/ldapauth',
+
+            username: "",
+            password: "",
+
+            // User information
+            getUserLink: 'http://localhost:3001/api/user',
+
+            department: 'department',
+            displayName: 'Фамилия Имя Отчество',
+            email: 'email',
+            role: 'role',
+            title: 'title',
+        }
+    },
+
+    mounted() {
+        axios.post(this.authLink, 
+        {
+            "username": this.username,
+            "password": this.password
+        },
+        {
+            'Content-Type': 'application/json',
+            withCredentials: true 
+        })
+        .then(res => (console.log(res.data)));
+
+        
+        axios.get(this.getUserLink, { withCredentials: true })
+        .then((res) => {
+            this.department = res.data.department;
+            this.displayName = res.data.displayName;
+            this.email = res.data.email;
+            this.role = res.data.role;
+            this.title = res.data.title;
+        });
+    }
 }
+
 </script>
 
 <style>
@@ -82,11 +127,11 @@ export default {
         background: var(--sub-color);
     }
 
-    .userSection .userName {
+    .userSection .username {
         margin: auto 10px auto 10px;
 
         font-family: var(--main-font);
-        font-size: 14px;
+        font-size: 16px;
 
         color: var(--text-color);
     }
