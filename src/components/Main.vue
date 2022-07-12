@@ -22,7 +22,7 @@
                     </div>
                 </div>
             </div>
-            <button class="createOrderButton"> Новый заказ + </button>
+            <button class="createOrderButton"> Новый заказ </button>
         </div>
 
         <!-- Center, right side -->
@@ -34,6 +34,7 @@
             <div class="productList">
                 <div class="product" v-for="product in order.positions" :key="product">
                     <textarea class="name" placeholder="Название товара" v-model="product.name"></textarea>
+                    <button class="deleteProduct" @click="deleteProduct($event);"> ✖ </button>
                     <div class="productInfo">
                         <textarea class="link"    placeholder="Ссылка на товар" v-model="product.link"></textarea>
                         <br>
@@ -43,8 +44,9 @@
                         <textarea class="article" placeholder="Артикль"         v-model="product.article"></textarea>
                     </div>
                 </div>
+                <button class="addNewProduct" @click="addNewProduct($event);"> + </button>
             </div>
-            <textarea id="usernameTo" class="usernameTo" placeholder="Для кого заказ (если не будет заполнено, будет введено ваше имя)"></textarea>
+            <textarea id="usernameTo" class="usernameTo" placeholder="Для кого заказ" v-model="order.usernameTo"></textarea>
             <div class="buttons">
                 <button class="sendButton" @click="EditOrderByID()"> Обновить </button>
                 <button class="deleteButton" @click="DeleteOrderByID();"> Удалить заказ </button>
@@ -82,6 +84,22 @@ export default {
     },
 
     methods: {
+        // Editor functions
+        deleteProduct(element) {
+            element.path[1].remove();
+        },
+
+        addNewProduct(element) {
+            this.order.positions.push({
+                name: "",
+                link: "",
+                description: "",
+                count: "",
+                article: ""
+            })
+        },
+
+        // Database requests
         getOrders() {
             axios.get(this.getOrdersLink, { withCredentials: true })
             .then((res) => {
@@ -100,7 +118,6 @@ export default {
 
         EditOrderByID() {
             let positions = [];
-            positions.name = "positions"
 
             // We count the number of products in the order
             let productList = document.getElementsByClassName('product'); 
@@ -108,24 +125,19 @@ export default {
             // Loop through the elements and take the values from each product elemnt
             for (let productCounter = 0; productCounter < productList.length; productCounter++) {
                 let product = {
-                    "name":        productList[productCounter].childNodes[0].value,                // Product name
-                    "link":        productList[productCounter].childNodes[1].childNodes[0].value,  // Product link
-                    "description": productList[productCounter].childNodes[1].childNodes[2].value,  // Product description
-                    "article":     productList[productCounter].childNodes[1].childNodes[4].value,  // Product count
-                    "count":       productList[productCounter].childNodes[1].childNodes[5].value   // Product count
+                    "name":        productList[productCounter].childNodes[0].value,                         // Product name
+                    "link":        productList[productCounter].childNodes[2].childNodes[0].value,           // Product link
+                    "description": productList[productCounter].childNodes[2].childNodes[2].value,           // Product description
+                    "count":       parseInt(productList[productCounter].childNodes[2].childNodes[4].value), // Product count
+                    "article":     productList[productCounter].childNodes[2].childNodes[5].value            // Product count
                 }
                 positions.push(product);
             }
-
             let usernameTo = document.getElementById('usernameTo').value;
-            if (usernameTo == "") {
-                usernameTo = document.getElementById('username').innerHTML;
-            }
 
-            let data = {positions, usernameTo};
-            console.log(JSON.stringify(data));
+            let data = { positions, usernameTo };
 
-            axios.patch(this.getOrderByIdLink+this.selectedOrderId, JSON.stringify(data), { withCredentials: true })
+            axios.patch(this.getOrderByIdLink+this.selectedOrderId, data, { withCredentials: true })
             .then((res) => {
                 console.log(res);
             });
@@ -276,7 +288,10 @@ export default {
     .productsAndStatus .productsList {
         margin: 0;
         padding: 0px 20px 0px 20px;
+
         display: flex;
+
+        height: 38px;
 
         font-size: 12px;
         white-space: nowrap;
@@ -386,6 +401,8 @@ export default {
         margin-bottom: 20px;
         padding-bottom: 20px;
 
+        position: relative;
+
         overflow-x: hidden;
 
         min-height: 60px;
@@ -395,6 +412,31 @@ export default {
     }
     .productList .product .productInfo{
         margin-left: 50px;
+    }
+    .productList .product .deleteProduct {
+        all: unset;
+
+        top: 10px;
+        right: 10px;
+
+        position: absolute;
+
+        height: 20px;
+        width: 20px;
+
+        border: 0;
+
+        font-size: 18px;
+
+        color: var(--text-color);
+        background: none;
+
+        cursor: pointer;
+
+        transition: .3s;
+    }
+    .productList .product .deleteProduct:hover {
+        color: var(--text-color-hover);
     }
     .productList .product textarea {
         all: unset;
@@ -433,6 +475,25 @@ export default {
     }
     .productList .product .article {
         width: 100px;
+    }
+
+    .productList .addNewProduct {
+        height: 20px;
+        width: 20px;
+
+        border: 0;
+
+        font-size: 32px;
+
+        color: var(--text-color);
+        background: none;
+
+        cursor: pointer;
+
+        transition: .3s;
+    }
+    .productList .addNewProduct:hover {
+        color: var(--text-color-hover);
     }
 
     .editor .usernameTo {

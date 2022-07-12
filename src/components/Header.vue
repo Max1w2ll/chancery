@@ -37,19 +37,22 @@ export default {
         }
     },
 
-    mounted() {
-        axios.post(this.authLink, 
-        {
-            "username": this.username,
-            "password": this.password
-        },
-        {
-            'Content-Type': 'application/json',
-            withCredentials: true 
-        })
-        .then(res => (console.log(res.data)));
+    methods: {
+        logIn() {
+            axios.post(this.authLink, 
+            {
+                "username": this.username,
+                "password": this.password
+            },
+            {
+                'Content-Type': 'application/json',
+                withCredentials: true 
+            })
+            .then(res => (console.log(res)));
+        }
+    },
 
-        
+    mounted() {    
         axios.get(this.getUserLink, { withCredentials: true })
         .then((res) => {
             this.department = res.data.department;
@@ -57,6 +60,17 @@ export default {
             this.email = res.data.email;
             this.role = res.data.role;
             this.title = res.data.title;
+        }, 
+        res => {
+            if (res.response.status == 401) {
+                this.username = prompt("Вы не авторизованы. Введите имя пользователя","Имя пользователя:","");
+                this.password = prompt("Вы не авторизованы. Введите пароль","Пароль:","");
+                this.logIn();
+                window.setTimeout(function() {
+                    window.location.reload();
+                }, 1000);
+            }
+            else (alert(res));
         });
     }
 }
