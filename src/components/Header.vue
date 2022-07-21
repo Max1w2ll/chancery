@@ -1,78 +1,58 @@
 <template>
     <div class="headerSection"> 
         <div class="ordersSection">
-            <img class="threeLineIcon" src="../assets/icons/threeLineIcon.png">
-            <p class="title"> Заказы </p>
+            <div id="navMenu" class="navMenu">
+                <div class="header">
+                    <img class="leftArrow" @click="closeNavMenu()" src="../assets/icons/leftArrow.png">
+                    <p id="titleOrdersStatusList" class="titleOrdersStatusList"> {{selectedOrderStatusList}} </p>
+                </div>
+                <div class="ordersStatuses">
+                    <p @click="changeSelectedOrderStatus($event);"> Мои заказы </p>
+                    <p @click="changeSelectedOrderStatus($event);"> Необработанные </p>
+                    <p @click="changeSelectedOrderStatus($event);"> Обрабатываются </p>
+                    <p @click="changeSelectedOrderStatus($event);"> Обработаны </p>
+                </div>
+            </div>
+            <img class="threeLineIcon" @click="openNavMenu()" src="../assets/icons/threeLineIcon.png">
+            <p class="titleOrdersStatusList"> {{selectedOrderStatusList}} </p>
         </div>
 
         <div class="userSection">
-            <p id="username" class="username"> {{displayName}} </p>
+            <p id="username" class="username"> {{userData.displayName}} </p>
             <p class="logOut"> Выйти </p>
         </div>
     </div>
 </template>
 
 <script>
-import axios from 'axios';
-
 export default {
     name: 'Header',
 
+    props: {
+        userData: {
+            type: Object,
+            default() { return {} }
+        },
+    },
+
     data() {
         return {
-            // Authentication
-            authLink: 'http://localhost:3000/auth/ldapauth',
-
-            username: "",
-            password: "",
-
-            // User information
-            getUserLink: 'http://localhost:3001/api/user',
-
-            department: 'department',
-            displayName: 'Фамилия Имя Отчество',
-            email: 'email',
-            role: 'role',
-            title: 'title',
+            selectedOrderStatusList: 'Мои заказы'
         }
     },
 
     methods: {
-        logIn() {
-            axios.post(this.authLink, 
-            {
-                "username": this.username,
-                "password": this.password
-            },
-            {
-                'Content-Type': 'application/json',
-                withCredentials: true 
-            })
-            .then(res => (console.log(res)));
+        openNavMenu() {
+            document.getElementById('navMenu').style.width = '300px';
+        },
+        closeNavMenu() {
+            document.getElementById('navMenu').style.width = '0px';
+        },
+        changeSelectedOrderStatus(event) {
+            this.selectedOrderStatusList = event.path[0].innerText;
+            this.closeNavMenu()
         }
     },
-
-    mounted() {    
-        axios.get(this.getUserLink, { withCredentials: true })
-        .then((res) => {
-            this.department = res.data.department;
-            this.displayName = res.data.displayName;
-            this.email = res.data.email;
-            this.role = res.data.role;
-            this.title = res.data.title;
-        }, 
-        res => {
-            if (res.response.status == 401) {
-                this.username = prompt("Вы не авторизованы. Введите имя пользователя","Имя пользователя:","");
-                this.password = prompt("Вы не авторизованы. Введите пароль","Пароль:","");
-                this.logIn();
-                window.setTimeout(function() {
-                    window.location.reload();
-                }, 1000);
-            }
-            else (alert(res));
-        });
-    }
 }
 
 </script>
@@ -111,8 +91,8 @@ export default {
         filter: invert(0.2);
     }
 
-    .ordersSection .title {
-        margin: auto 10px auto 10px;
+    .ordersSection .titleOrdersStatusList {
+        margin: 15px 5px auto 5px;
 
         height: 25px;
 
@@ -120,12 +100,74 @@ export default {
         font-size: 18px;
 
         color: var(--text-color);
+    }
+
+    .navMenu {
+    top: 0;
+    left: 0;
+
+    z-index: 1;
+    position: absolute;
+
+    height: 100%;
+    width: 0;
+    
+    background-color: var(--nav-menu-background);
+    overflow-x: hidden;
+
+    transition: 0.5s;
+    }
+
+    .navMenu .header {
+        display: flex;
+        
+        height: 50px;
+        width: 300px;
+    }
+
+    .header .leftArrow {
+        margin: 10px;
+
+        height: 30px;
+        width: 30px;
 
         cursor: pointer;
     }
-    .ordersSection .title:hover {
+    .header .leftArrow:hover {
+        filter: invert(0.2);
+    }
+
+    .header .titleOrdersStatusList {
+        margin: 15px 5px auto 5px;
+
+        height: 25px;
+
+        font-family: var(--main-font);
+        font-size: 18px;
+
+        color: var(--text-color);
+    }
+
+    .navMenu .ordersStatuses {
+        margin-left: 55px;
+
+        font-family: var(--main-font);
+        font-size: 16px;
+        line-height: 20px;
+        white-space: nowrap;
+
+        color: var(--text-color);
+    }
+
+    .navMenu .ordersStatuses p {
+        cursor: pointer;
+
+        transition: .2s;
+    }
+    .navMenu .ordersStatuses p:hover {
         color: var(--text-color-hover);
     }
+
 
     /* Right up corner */
     .headerSection .userSection {

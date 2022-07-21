@@ -21,35 +21,48 @@
                         <p class="status"> {{order.status}} </p>
                     </div>
                 </div>
+                <div class="noOrders" v-if="ordersList.length == 0">
+                    <img src="../assets/icons/noOrders.png" width="74" height="74"> 
+                    <p> Заказов нет! </p>
+                    <p> Cоздайте новый по кнопке ниже </p>
+                </div>
             </div>
-            <button class="createOrderButton"> Новый заказ </button>
+            <button class="createOrderButton" @click="newOrder();"> Новый заказ </button>
         </div>
 
         <!-- Center, right side -->
         <div class="editor" v-if="selectedOrderId != undefined">
             <div class="title">
-                <p> Заказ ID: {{order.id}} </p>
+                <p v-if="editing == false"> Новый товар </p>
+                <p v-if="editing == true"> Заказ ID: {{order.id}} </p>
                 <button class="closeEditorButton" @click="selectedOrderId = undefined"> ✖ </button>
             </div>
-            <div class="productList">
+            <div id="productList" class="productList">
                 <div class="product" v-for="product in order.positions" :key="product">
                     <textarea class="name" placeholder="Название товара" v-model="product.name"></textarea>
                     <button class="deleteProduct" @click="deleteProduct($event);"> ✖ </button>
                     <div class="productInfo">
                         <textarea class="link"    placeholder="Ссылка на товар" v-model="product.link"></textarea>
                         <br>
-                        <textarea class="desc"    placeholder="Описание"        v-model="product.description"></textarea>
+                        <textarea class="desc"    placeholder="Описание (не менее 4 символов)" v-model="product.description"></textarea>
                         <br>
-                        <textarea class="count"   placeholder="Количество"      v-model="product.count"></textarea>
-                        <textarea class="article" placeholder="Артикль"         v-model="product.article"></textarea>
+                        <textarea class="count"   placeholder="Количество" v-model="product.count"></textarea>
+                        <textarea class="article" placeholder="Артикль" v-model="product.article"></textarea>
                     </div>
                 </div>
-                <button class="addNewProduct" @click="addNewProduct($event);"> + </button>
+                <div class="noProducts" v-if="productExist == false"> 
+                    <img src="../assets/icons/noProducts.png" width="52" height="52">
+                    <p> Товары отсутствуют! </p> 
+                    <p> Создайте новый, нажав на + </p>
+                </div>
+                <button class="addNewProduct" @click="addNewProduct();"> + </button>
             </div>
-            <textarea id="usernameTo" class="usernameTo" placeholder="Для кого заказ" v-model="order.usernameTo"></textarea>
-            <div class="buttons">
-                <button class="sendButton" @click="EditOrderByID()"> Обновить </button>
-                <button class="deleteButton" @click="DeleteOrderByID();"> Удалить заказ </button>
+            <textarea id="usernameTo" class="usernameTo" v-if="productExist == true" placeholder="Для кого заказ" v-model="order.usernameTo"></textarea>
+
+            <div class="buttons" v-if="productExist == true">
+                <button class="saveButton"   v-if="editing == false" @click="createOrder()"> Сохранить новый заказ </button>
+                <button class="sendButton"   v-if="editing == true"  @click="editOrderByID()"> Обновить </button>
+                <button class="deleteButton" v-if="editing == true"  @click="deleteOrderByID();"> Удалить заказ </button>
             </div>
         </div>
         <div class="nothingSelected" v-if="selectedOrderId == undefined">
@@ -63,60 +76,74 @@
 </template>
 
 <script>
-import axios from 'axios';
+import axios from 'axios';  
 
 export default {
     name: 'Main',
+
+    props: {
+        userData: {
+            type: Object,
+            default() { return {} }
+        },
+    },
     
     data() {
         return {
             // Get all orders
-            getOrdersLink: 'http://localhost:3001/api/user/orders',
+            getOrdersLink: 'http://localhost:3001/user/orders',
+            selectedOrderStatusList: 'Мои заказы',
 
             ordersList: () => [],
 
             // Get one order by ID
-            getOrderByIdLink: 'http://localhost:3001/api/user/orders/',
+            getOrderByIdLink: 'http://localhost:3001/user/orders/',
 
             selectedOrderId: undefined,
-            order: () => [],
+            order: [{}],
+
+            editing: false, // editing EXISTING order. Not new.
+            productExist: false,
         }
     },
 
     methods: {
-        // Editor functions
-        deleteProduct(element) {
-            element.path[1].remove();
+        //------------------//
+        // Editor functions //
+        //------------------//
+
+        newOrder() {
+            // Clear all areas and variables
+            this.editing = false;
+            this.selectedOrderId = 0;
+
+            this.order.positions = [{
+                name: "",
+                link: "https://",
+                description: "",
+                count: "",
+                article: ""
+            }]
+            this.order.usernameTo = this.userData.displayName;
+
+            console.log(this.order);
         },
 
-        addNewProduct(element) {
+        addNewProduct() {
             this.order.positions.push({
                 name: "",
-                link: "",
+                link: "https://",
                 description: "",
                 count: "",
                 article: ""
             })
         },
 
-        // Database requests
-        getOrders() {
-            axios.get(this.getOrdersLink, { withCredentials: true })
-            .then((res) => {
-                this.ordersList = res.data.orders;
-                console.log(this.ordersList);
-            });
+        deleteProduct(element) {
+            element.path[1].remove();
         },
 
-        getOrderByID() {
-            axios.get(this.getOrderByIdLink+this.selectedOrderId, { withCredentials: true })
-            .then((res) => {
-                this.order = res.data;
-                console.log(res);
-            });
-        },
-
-        EditOrderByID() {
+        getProducts() {
             let positions = [];
 
             // We count the number of products in the order
@@ -137,27 +164,102 @@ export default {
 
             let data = { positions, usernameTo };
 
-            axios.patch(this.getOrderByIdLink+this.selectedOrderId, data, { withCredentials: true })
+            return data;
+        },
+
+        //-------------------//
+        // Database requests //
+        //-------------------//
+
+        getOrders() {
+            axios.get(this.getOrdersLink, { withCredentials: true })
             .then((res) => {
                 console.log(res);
+                this.ordersList = res.data.orders;
+                console.log(this.ordersList);
             });
         },
 
-        DeleteOrderByID() {
-            axios.delete(this.getOrderByIdLink+this.selectedOrderId, { withCredentials: true })
+        getOrderByID() {
+            axios.get(this.getOrderByIdLink+this.selectedOrderId, { withCredentials: true })
             .then((res) => {
-                this.selectedOrderId = undefined;
-
-                this.order = res.data;
                 console.log(res);
+                this.order = res.data;
+                console.log(this.order.positions);
 
+                if (this.order.status == "Не обработан") {
+                    this.editing = true;
+                }
+            });
+        },
+
+        createOrder() {
+            axios.post(this.getOrdersLink, this.getProducts(), { withCredentials: true })
+            .then((res) => {
+                console.log(res);
                 this.getOrders();
             });
+        },
+
+        editOrderByID() {
+            axios.patch(this.getOrderByIdLink+this.selectedOrderId, this.getProducts(), { withCredentials: true })
+            .then((res) => {
+                console.log(res);
+                this.getOrders();
+            });
+        },
+
+        deleteOrderByID() {
+            axios.delete(this.getOrderByIdLink+this.selectedOrderId, { withCredentials: true })
+            .then((res) => {
+                console.log(res);
+                this.selectedOrderId = undefined;
+                this.order = res.data;
+                this.getOrders();
+            });
+        },
+
+        //-------------------//
+        //       Other       //
+        //-------------------//
+
+        newGetOrdersLink() {
+            switch(this.selectedOrderStatusList) {
+                case "Мои заказы":
+                    this.getOrdersLink='http://localhost:3001/user/orders';
+                break;
+                case "Необработанные":
+                    this.getOrdersLink='http://localhost:3001/admin/admin/orders/np';
+                break;
+                case "Обрабатываются":
+                    this.getOrdersLink='http://localhost:3001/admin/admin/orders/ip';
+                break;
+                case "Обработаны":
+                    this.getOrdersLink='http://localhost:3001/admin/admin/orders/p';
+                break;
+            }
+            this.getOrders();
         }
     },
 
     mounted() {
         this.getOrders();
+    
+        setInterval(() => {
+            if (this.selectedOrderStatusList != document.getElementById("titleOrdersStatusList").innerText) {
+                this.selectedOrderStatusList = document.getElementById("titleOrdersStatusList").innerText;
+                this.newGetOrdersLink();
+            }
+        }, 10);
+        
+        setInterval(() => {
+            if (document.getElementsByClassName('product').length > 0) {
+                this.productExist = true;
+            }
+            else {
+                this.productExist = false;
+            }
+        }, 10);
     }
 }
 </script>
@@ -309,6 +411,19 @@ export default {
         margin: 0;
 
         font-size: 12px;
+    }
+
+    .ordersList .noOrders {
+        margin-top: 28px;
+
+        font-family: var(--main-font);
+        font-size: 16px;
+        text-align: center;
+
+        color: var(--text-color);
+    }
+    .noOrders p {
+        margin-top: 5px;
     }
 
     .ordersSection .createOrderButton {
@@ -477,6 +592,16 @@ export default {
         width: 100px;
     }
 
+    .productList .noProducts {
+        margin: auto;
+
+        font-family: var(--main-font);
+        font-size: 18px;
+        text-align: center;
+
+        color: var(--text-color);
+    }
+
     .productList .addNewProduct {
         height: 20px;
         width: 20px;
@@ -536,6 +661,30 @@ export default {
         transition: .3s;
     }
     .editor .sendButton:hover {
+        -webkit-transform: scale(1.1);
+    }
+
+    .editor .saveButton {
+        all: unset;
+
+        margin-left: 30px;
+        padding: 5px;
+
+        height: 30px;
+        width: 200px;
+
+        font-family: var(--sub-font);
+        font-size: 16px;
+        text-align: center;
+
+        color: var(--text-color);
+        background: var(--sub-color);
+
+        cursor: pointer;
+
+        transition: .3s;
+    }
+    .editor .saveButton:hover {
         -webkit-transform: scale(1.1);
     }
 
