@@ -3,7 +3,7 @@
         <!-- Left side -->
         <div class="ordersSection">
             <div class="searchSection">
-                <input placeholder="Введите название заказа">
+                <input @input='filterOrder' placeholder="Введите название заказа" v-model="searchOrdersInput">
                 <div class="searchButton">
                     <img src="../assets/icons/searchIcon.png">
                 </div>
@@ -57,12 +57,17 @@
                 </div>
                 <button class="addNewProduct" @click="addNewProduct();"> + </button>
             </div>
-            <textarea id="usernameTo" class="usernameTo" v-if="productExist == true" placeholder="Для кого заказ" v-model="order.usernameTo"></textarea>
+            <textarea id="usernameTo" class="usernameTo" v-if="productExist == true" placeholder="Для кого заказ" v-model="order.usernameTo"/>
+            <p id="username" class="username" v-if="productExist == true && userData.role == 'globaladmin'"> Пользователь: {{order.username}} </p>
 
             <div class="buttons" v-if="productExist == true">
                 <button class="saveButton"   v-if="editing == false" @click="createOrder()"> Сохранить новый заказ </button>
                 <button class="sendButton"   v-if="editing == true"  @click="editOrderByID()"> Обновить </button>
                 <button class="deleteButton" v-if="editing == true"  @click="deleteOrderByID();"> Удалить заказ </button>
+                <select class="selectOrderCategory" v-if="editing == true">
+                    <option value="value1">Обрабатывается</option>
+                    <option value="value2">Обработан</option>
+                </select>
             </div>
         </div>
         <div class="nothingSelected" v-if="selectedOrderId == undefined">
@@ -91,19 +96,21 @@ export default {
     data() {
         return {
             // Get all orders
-            getOrdersLink: 'http://localhost:3001/user/orders',
+            getOrdersLink: 'http://chancery.fisb/api/employee/orders',
             selectedOrderStatusList: 'Мои заказы',
 
             ordersList: () => [],
 
             // Get one order by ID
-            getOrderByIdLink: 'http://localhost:3001/user/orders/',
+            getOrderByIdLink: 'http://localhost:3001/employee/orders/',
 
             selectedOrderId: undefined,
             order: [{}],
 
-            editing: false, // editing EXISTING order. Not new.
+            editing: true, // editing EXISTING order. Not new.
             productExist: false,
+
+            searchOrdersInput: '',
         }
     },
 
@@ -119,11 +126,12 @@ export default {
 
             this.order.positions = [{
                 name: "",
-                link: "https://",
+                link: "https://link.ru",
                 description: "",
                 count: "",
                 article: ""
             }]
+            this.order.username = this.userData.email;
             this.order.usernameTo = this.userData.displayName;
 
             console.log(this.order);
@@ -132,7 +140,7 @@ export default {
         addNewProduct() {
             this.order.positions.push({
                 name: "",
-                link: "https://",
+                link: "https://link.ru",
                 description: "",
                 count: "",
                 article: ""
@@ -152,7 +160,7 @@ export default {
             // Loop through the elements and take the values from each product elemnt
             for (let productCounter = 0; productCounter < productList.length; productCounter++) {
                 let product = {
-                    "name":        productList[productCounter].childNodes[0].value,                         // Product name
+                    "name":        productList[productCounter].childNodes[0].value.toString(),              // Product name
                     "link":        productList[productCounter].childNodes[2].childNodes[0].value,           // Product link
                     "description": productList[productCounter].childNodes[2].childNodes[2].value,           // Product description
                     "count":       parseInt(productList[productCounter].childNodes[2].childNodes[4].value), // Product count
@@ -181,6 +189,11 @@ export default {
         },
 
         getOrderByID() {
+            this.editing = true;
+
+            if (this.userData.role == 'globaladmin') {
+                this.getOrderByIdLink = 'http://localhost:3001/manager/orders/'
+            }
             axios.get(this.getOrderByIdLink+this.selectedOrderId, { withCredentials: true })
             .then((res) => {
                 console.log(res);
@@ -226,19 +239,30 @@ export default {
         newGetOrdersLink() {
             switch(this.selectedOrderStatusList) {
                 case "Мои заказы":
-                    this.getOrdersLink='http://localhost:3001/user/orders';
+                    this.getOrdersLink='http://localhost:3001/employee/orders';
                 break;
                 case "Необработанные":
-                    this.getOrdersLink='http://localhost:3001/admin/admin/orders/np';
+                    this.getOrdersLink='http://localhost:3001/manager/orders/np';
                 break;
                 case "Обрабатываются":
-                    this.getOrdersLink='http://localhost:3001/admin/admin/orders/ip';
+                    this.getOrdersLink='http://localhost:3001/manager/orders/ip';
                 break;
                 case "Обработаны":
-                    this.getOrdersLink='http://localhost:3001/admin/admin/orders/p';
+                    this.getOrdersLink='http://localhost:3001/manager/orders/p';
                 break;
             }
             this.getOrders();
+        },
+
+        filterOrder() {
+            let searchInput = this.searchOrdersInput;
+            this.ordersList = this.ordersList.filter(function callbackFn(ordersList)  {
+                console.log(ordersList);
+                console.log("SEARCH: " + searchInput);
+                if(ordersList.username.includes(searchInput)) {
+                    return ordersList
+                }
+            })
         }
     },
 
@@ -522,6 +546,7 @@ export default {
 
         min-height: 60px;
         width: 95%;
+        min-width: 950px;
 
         background: var(--left-side-background);
     }
@@ -580,10 +605,10 @@ export default {
         font-size: 22px;
     }
     .productList .product .link {
-        width: 900px;
+        width: 600px;
     }
     .productList .product .desc {
-        width: 900px;
+        width: 800px;
     }
     .productList .product .count {
         width: 100px;
@@ -641,7 +666,28 @@ export default {
         background: transparent;
     }
 
-    .editor .sendButton {
+    .editor .username {
+        margin: 0px 0px 40px 30px;
+
+        resize: none;
+
+        height: 28px;
+        width: 970px;
+
+        border: none;
+
+        font-family: var(--main-font);
+        font-size: 22px;
+
+        color: var(--text-color);
+        background: transparent;
+    }
+
+    .buttons {
+        min-width: 950px;
+    }
+
+    .buttons .sendButton {
         all: unset;
 
         margin-left: 30px;
@@ -660,11 +706,11 @@ export default {
 
         transition: .3s;
     }
-    .editor .sendButton:hover {
+    .buttons .sendButton:hover {
         -webkit-transform: scale(1.1);
     }
 
-    .editor .saveButton {
+    .buttons .saveButton {
         all: unset;
 
         margin-left: 30px;
@@ -684,11 +730,11 @@ export default {
 
         transition: .3s;
     }
-    .editor .saveButton:hover {
+    .buttons .saveButton:hover {
         -webkit-transform: scale(1.1);
     }
 
-    .editor .deleteButton {
+    .buttons .deleteButton {
         all: unset;
 
         margin-left: 30px;
@@ -707,8 +753,27 @@ export default {
 
         transition: .3s;
     }
-    .editor .deleteButton:hover {
+    .buttons .deleteButton:hover {
         -webkit-transform: scale(1.1);
+    }
+
+    .buttons .selectOrderCategory {
+        margin-left: 30px;
+
+        height: 30px;
+        width: 200px;
+
+        border: none;
+
+        font-family: var(--sub-font);
+        font-size: 16px;
+        text-align: center;
+
+        color: var(--text-color);
+        background: var(--sub-color);
+    }
+    .buttons .selectOrderCategory:focus {
+        outline: none;
     }
 
     .mainSection .nothingSelected {
