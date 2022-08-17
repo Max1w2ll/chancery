@@ -106,7 +106,7 @@ export default {
     --left-side-scrollbar-track: #273a52;
     --left-side-scrollbar-thumb: #9b9b9b;
 
-    --nav-menu-background: #18273a;
+    --filter-menu-background: #18273a;
 
     --deleteButton-background: #781c1c;
   }

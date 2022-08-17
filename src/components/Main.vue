@@ -1,9 +1,50 @@
 <template>
     <div class="mainSection">
+        <!-- Filter menu -->
+        <div id="filterMenu" class="filterMenu">
+            <div class="header">
+                <img class="leftArrow" @click="closeFilterMenu()" src="../assets/icons/leftArrow.png">
+                <p id="menuTitle" class="menuTitle"> Меню </p>
+            </div>
+            <p class="filterTitle"> Фильтры поиска: </p>
+            <div class="filterSettings"> 
+                <div>
+                    <p> Статус заказа: </p>
+                    <select id="filterSettingStatus">
+                        <option> Любой </option>
+                        <option> Не обработан </option>
+                        <option> Обрабатывается </option>
+                        <option> Обработан </option>
+                        <option> Выдан </option>
+                    </select>
+                </div>
+                <div>
+                    <p> Период создания: </p>
+                    <table>
+                        <tr>
+                            <td> От: </td>
+                            <td> <input id="filterSettingDateFrom" type="date"> </td>
+                        </tr>
+                        <tr>
+                            <td> До: </td>
+                            <td> <input id="filterSettingDateTo" type="date"> </td>
+                        </tr>
+                    </table>
+                </div>
+                <div>
+                    <p> Вывести список из промежутка </p>
+                    <select id="filterSettingSortBy">
+                        <option> Сначала новые </option>
+                        <option> Сначала старые </option>
+                    </select>
+                </div>
+                <button @click="closeFilterMenu(); getOrders();"> Поиск </button>
+            </div>
+        </div>
         <!-- Left side -->
         <div class="ordersSection">
             <div class="searchSection">
-                <input @input='filterOrder' placeholder="Введите название заказа" v-model="searchOrdersInput">
+                <input id="filterSettingSearch" @input="getOrders();" placeholder="Введите название заказа" v-model="searchOrdersInput">
                 <div class="searchButton">
                     <img src="../assets/icons/searchIcon.png">
                 </div>
@@ -42,11 +83,11 @@
                     <textarea class="name" placeholder="Название товара" v-model="product.name"></textarea>
                     <button class="deleteProduct" @click="deleteProduct($event);"> ✖ </button>
                     <div class="productInfo">
-                        <textarea class="link"    placeholder="Ссылка на товар" v-model="product.link"></textarea>
+                        <textarea class="link" placeholder="Ссылка на товар" v-model="product.link"></textarea>
                         <br>
-                        <textarea class="desc"    placeholder="Описание (не менее 4 символов)" v-model="product.description"></textarea>
+                        <textarea class="desc" placeholder="Описание (не менее 4 символов)" v-model="product.description"></textarea>
                         <br>
-                        <textarea class="count"   placeholder="Количество" v-model="product.count"></textarea>
+                        <textarea class="count" placeholder="Количество" v-model="product.count"></textarea>
                         <textarea class="article" placeholder="Артикль" v-model="product.article"></textarea>
                     </div>
                 </div>
@@ -58,8 +99,9 @@
                 <button class="addNewProduct" @click="addNewProduct();"> + </button>
             </div>
             <textarea id="usernameTo" class="usernameTo" v-if="productExist == true" placeholder="Для кого заказ" v-model="order.usernameTo"/>
-            <p id="username" class="username" v-if="productExist == true && userData.role == 'globaladmin'"> Пользователь: {{order.username}} </p>
-
+            <p id="username"  class="extendedInfo" v-if="productExist == true && userData.role == 'globaladmin' && editing == true"> Пользователь: {{order.username}} </p>
+            <p id="createdAt" class="extendedInfo" v-if="productExist == true && userData.role == 'globaladmin' && editing == true"> Создано в {{order.createdAt}} </p>
+            <p id="updatedAt" class="extendedInfo" v-if="productExist == true && userData.role == 'globaladmin' && editing == true"> Последние обновление в {{order.updatedAt}} </p>
             <div class="buttons" v-if="productExist == true">
                 <button class="saveButton"   v-if="editing == false" @click="createOrder()"> Сохранить новый заказ </button>
                 <button class="sendButton"   v-if="editing == true"  @click="editOrderByID()"> Обновить </button>
@@ -96,13 +138,13 @@ export default {
     data() {
         return {
             // Get all orders
-            getOrdersLink: 'http://chancery.fisb/api/employee/orders',
+            getOrdersLink: 'http://chancery.fisb/api/employee/orders/all?',
             selectedOrderStatusList: 'Мои заказы',
 
             ordersList: () => [],
 
             // Get one order by ID
-            getOrderByIdLink: 'http://localhost:3001/employee/orders/',
+            getOrderByIdLink: 'http://chancery.fisb/api/employee/orders/all/',
 
             selectedOrderId: undefined,
             order: [{}],
@@ -132,7 +174,7 @@ export default {
                 article: ""
             }]
             this.order.username = this.userData.email;
-            this.order.usernameTo = this.userData.displayName;
+            this.order.usernameTo = this.userData.email;
 
             console.log(this.order);
         },
@@ -180,19 +222,66 @@ export default {
         //-------------------//
 
         getOrders() {
-            axios.get(this.getOrdersLink, { withCredentials: true })
-            .then((res) => {
-                console.log(res);
-                this.ordersList = res.data.orders;
-                console.log(this.ordersList);
-            });
+            let status = document.getElementById('filterSettingStatus').value
+            let dateFrom = document.getElementById('filterSettingDateFrom').value
+            let dateTo = document.getElementById('filterSettingDateTo').value
+            let sortBy = document.getElementById('filterSettingSortBy').value
+            let search = document.getElementById('filterSettingSearch').value
+
+            console.log(status)
+            console.log(dateFrom)
+            console.log(dateTo)
+            console.log(sortBy)
+            console.log(search)
+
+            if (status != 'Любой') {
+                status = 'filter.status=%24eq%3A'+status;
+            }
+            else {
+                status = '';
+            }
+
+            let dateForm;
+            if (dateFrom.length == 0 && dateTo.length == 0) {
+                dateForm = ''
+            }
+            else {
+                dateForm = '&filter.createdAt=%24btw%3A' + dateFrom + '%2C' + dateTo; // '%2C' = ','
+            }
+
+            if (sortBy == "Сначала новые") {
+                sortBy = '&sortBy=createdAt:DESC'
+            }
+            else {
+                sortBy = '&sortBy=createdAt:ASC'
+            }
+
+            if (search.length > 0) {
+                search = '&search='+search
+            }
+            else {
+                search = '';
+            }
+
+            if (this.userData.role == 'globaladmin') {
+                this.getOrdersLink = 'http://chancery.fisb/api/manager/orders/all?'
+            }
+
+            setTimeout(() => {
+                axios.get(this.getOrdersLink+status+dateForm+sortBy+search, { withCredentials: true })
+                .then((res) => {
+                    console.log(res);
+                    this.ordersList = res.data.data;
+                    console.log(this.ordersList);
+                });
+            }, 500);
         },
 
         getOrderByID() {
             this.editing = true;
 
             if (this.userData.role == 'globaladmin') {
-                this.getOrderByIdLink = 'http://localhost:3001/manager/orders/'
+                this.getOrderByIdLink = 'http://chancery.fisb/api/manager/orders/all/'
             }
             axios.get(this.getOrderByIdLink+this.selectedOrderId, { withCredentials: true })
             .then((res) => {
@@ -233,49 +322,19 @@ export default {
         },
 
         //-------------------//
-        //       Other       //
+        //    Other stuff    //
         //-------------------//
 
-        newGetOrdersLink() {
-            switch(this.selectedOrderStatusList) {
-                case "Мои заказы":
-                    this.getOrdersLink='http://localhost:3001/employee/orders';
-                break;
-                case "Необработанные":
-                    this.getOrdersLink='http://localhost:3001/manager/orders/np';
-                break;
-                case "Обрабатываются":
-                    this.getOrdersLink='http://localhost:3001/manager/orders/ip';
-                break;
-                case "Обработаны":
-                    this.getOrdersLink='http://localhost:3001/manager/orders/p';
-                break;
-            }
-            this.getOrders();
+        closeFilterMenu() { // openFilterMenu -> Header.vue
+            document.getElementById('filterMenu').style.width = '0px';
         },
-
-        filterOrder() {
-            let searchInput = this.searchOrdersInput;
-            this.ordersList = this.ordersList.filter(function callbackFn(ordersList)  {
-                console.log(ordersList);
-                console.log("SEARCH: " + searchInput);
-                if(ordersList.username.includes(searchInput)) {
-                    return ordersList
-                }
-            })
-        }
     },
 
     mounted() {
-        this.getOrders();
-    
-        setInterval(() => {
-            if (this.selectedOrderStatusList != document.getElementById("titleOrdersStatusList").innerText) {
-                this.selectedOrderStatusList = document.getElementById("titleOrdersStatusList").innerText;
-                this.newGetOrdersLink();
-            }
-        }, 10);
-        
+        setTimeout(() => {
+            this.getOrders();
+        }, 100);
+           
         setInterval(() => {
             if (document.getElementsByClassName('product').length > 0) {
                 this.productExist = true;
@@ -298,9 +357,77 @@ export default {
         background: var(--main-background);
     }
 
-    /*------------*/
+    /*-------------------------*/
+    /* Left side - filter menu */
+    /*-------------------------*/
+    .filterMenu {
+        top: 0;
+        left: 0;
+
+        z-index: 1;
+        position: absolute;
+
+        height: 100%;
+        width: 0;
+        
+        background-color: var(--filter-menu-background);
+        overflow-x: hidden;
+
+        white-space: nowrap;
+
+        transition: 0.5s;
+    }
+
+    .filterMenu .header {
+        display: flex;
+        
+        height: 50px;
+        width: 300px;
+    }
+
+    .header .leftArrow {
+        margin: 10px;
+
+        height: 30px;
+        width: 30px;
+
+        cursor: pointer;
+    }
+    .header .leftArrow:hover {
+        filter: invert(0.2);
+    }
+
+    .filterTitle {
+        padding-left: 15px;
+
+        font-family: var(--main-font);
+        font-size: 18px;
+
+        color: var(--text-color);
+    }
+
+    .filterSettings {
+        margin-top: 25px;
+        padding-left: 30px;
+
+        font-family: var(--main-font);
+        font-size: 16px;
+
+        color: var(--text-color);
+    }
+
+    .filterSettings div {
+        margin-bottom: 25px;
+    }
+
+    .filterSettings select {
+        height: 30px;
+        font-family: var(--main-font);
+    }
+
+    /*-----------*/
     /* Left side */
-    /*------------*/
+    /*-----------*/
 
     .mainSection .ordersSection {
         height: 950px;
@@ -666,7 +793,41 @@ export default {
         background: transparent;
     }
 
-    .editor .username {
+    .editor .extendedInfo {
+        margin: 0px 0px 40px 30px;
+
+        resize: none;
+
+        height: 10px;
+        width: 970px;
+
+        border: none;
+
+        font-family: var(--main-font);
+        font-size: 18px;
+
+        color: var(--text-color);
+        background: transparent;
+    }
+
+    .editor .createdAt {
+        margin: 0px 0px 40px 30px;
+
+        resize: none;
+
+        height: 28px;
+        width: 970px;
+
+        border: none;
+
+        font-family: var(--main-font);
+        font-size: 22px;
+
+        color: var(--text-color);
+        background: transparent;
+    }
+
+    .editor .updatedAt {
         margin: 0px 0px 40px 30px;
 
         resize: none;
