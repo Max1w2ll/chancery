@@ -99,6 +99,7 @@
                 <button class="addNewProduct" @click="addNewProduct();"> + </button>
             </div>
             <textarea id="usernameTo" class="usernameTo" v-if="productExist == true" placeholder="Для кого заказ" v-model="order.usernameTo"/>
+            <p id="orderStatus" class="extendedInfo" v-if="productExist == true && editing == true"> Текущий статус: {{order.status}} </p>
             <p id="username"  class="extendedInfo" v-if="productExist == true && userData.role == 'globaladmin' && editing == true"> Пользователь: {{order.username}} </p>
             <p id="createdAt" class="extendedInfo" v-if="productExist == true && userData.role == 'globaladmin' && editing == true"> Создано в {{order.createdAt}} </p>
             <p id="updatedAt" class="extendedInfo" v-if="productExist == true && userData.role == 'globaladmin' && editing == true"> Последние обновление в {{order.updatedAt}} </p>
@@ -106,9 +107,10 @@
                 <button class="saveButton"   v-if="editing == false" @click="createOrder()"> Сохранить новый заказ </button>
                 <button class="sendButton"   v-if="editing == true"  @click="editOrderByID()"> Обновить </button>
                 <button class="deleteButton" v-if="editing == true"  @click="deleteOrderByID();"> Удалить заказ </button>
-                <select class="selectOrderCategory" v-if="editing == true">
-                    <option value="value1">Обрабатывается</option>
-                    <option value="value2">Обработан</option>
+                <select id="selectOrderStatus" class="selectOrderStatus" v-if="editing == true && userData.role == 'globaladmin'">
+                    <option>Обрабатывается</option>
+                    <option>Обработан</option>
+                    <option>Выдан</option>
                 </select>
             </div>
         </div>
@@ -138,13 +140,13 @@ export default {
     data() {
         return {
             // Get all orders
-            getOrdersLink: 'http://chancery.fisb/api/employee/orders/all?',
+            getOrdersLink: 'http://auth.fisb/chancery/api/employee/orders/all?',
             selectedOrderStatusList: 'Мои заказы',
 
             ordersList: () => [],
 
             // Get one order by ID
-            getOrderByIdLink: 'http://chancery.fisb/api/employee/orders/all/',
+            getOrderByIdLink: 'http://auth.fisb/chancery/api/employee/orders/all/',
 
             selectedOrderId: undefined,
             order: [{}],
@@ -264,7 +266,7 @@ export default {
             }
 
             if (this.userData.role == 'globaladmin') {
-                this.getOrdersLink = 'http://chancery.fisb/api/manager/orders/all?'
+                this.getOrdersLink = 'http://auth.fisb/chancery/api/manager/orders/all?'
             }
 
             setTimeout(() => {
@@ -281,7 +283,7 @@ export default {
             this.editing = true;
 
             if (this.userData.role == 'globaladmin') {
-                this.getOrderByIdLink = 'http://chancery.fisb/api/manager/orders/all/'
+                this.getOrderByIdLink = 'http://auth.fisb/chancery/api/manager/orders/all/'
             }
             axios.get(this.getOrderByIdLink+this.selectedOrderId, { withCredentials: true })
             .then((res) => {
@@ -304,6 +306,10 @@ export default {
         },
 
         editOrderByID() {
+            if (this.userData.role == 'globaladmin') {
+                this.orderChangeStatus();
+            }
+            
             axios.patch(this.getOrderByIdLink+this.selectedOrderId, this.getProducts(), { withCredentials: true })
             .then((res) => {
                 console.log(res);
@@ -312,12 +318,38 @@ export default {
         },
 
         deleteOrderByID() {
+            if (this.userData.role == 'globaladmin') {
+                this.getOrderByIdLink = 'http://auth.fisb/chancery/api/manager/orders/all/';
+            }
+
             axios.delete(this.getOrderByIdLink+this.selectedOrderId, { withCredentials: true })
             .then((res) => {
                 console.log(res);
                 this.selectedOrderId = undefined;
                 this.order = res.data;
                 this.getOrders();
+            });
+        },
+
+        orderChangeStatus() {
+            let selectedOrderStatus = document.getElementById('selectOrderStatus').value;
+            let linkChangeOrderStatus = '';
+            switch (selectedOrderStatus) {
+                case "Обрабатывается":
+                    linkChangeOrderStatus = 'http://auth.fisb/chancery/api/manager/orders/np';
+                    break;
+                case "Обработан":
+                    linkChangeOrderStatus = 'http://auth.fisb/chancery/api/manager/orders/ip';
+                    break;
+                case "Выдан":
+                    linkChangeOrderStatus = 'http://auth.fisb/chancery/api/manager/orders/p';
+                    break;
+            }
+
+            axios.patch(linkChangeOrderStatus, { "ids": [ this.selectedOrderId ] }, { withCredentials: true })
+            .then((res) => {
+                console.log(res);
+                this.getOrderByID();
             });
         },
 
@@ -918,7 +950,7 @@ export default {
         -webkit-transform: scale(1.1);
     }
 
-    .buttons .selectOrderCategory {
+    .buttons .selectOrderStatus {
         margin-left: 30px;
 
         height: 30px;
@@ -933,7 +965,7 @@ export default {
         color: var(--text-color);
         background: var(--sub-color);
     }
-    .buttons .selectOrderCategory:focus {
+    .buttons .selectOrderStatus:focus {
         outline: none;
     }
 
