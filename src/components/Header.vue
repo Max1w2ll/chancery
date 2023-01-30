@@ -5,7 +5,6 @@
             <p class="menuTitle"> Меню </p>
         </div>
         <div class="userSection">
-            <p id="username" class="username"> {{userData.displayName}} ({{userData.role}})</p>
             <p class="logOut"> Выйти </p>
         </div>
     </div>

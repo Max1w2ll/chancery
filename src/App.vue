@@ -23,10 +23,10 @@ export default {
   data() {
     return {
       // Authorization 
-      authLink: 'http://auth.fisb/auth/api/ldapauth',
+      authLink: 'https://auth.fisb/auth/api/ldapauth',
 
       // User information
-      getUserLink: 'http://auth.fisb/chancery/api/auth/userinfo',
+      getUserLink: 'https://auth.fisb/chancery/api/auth/userinfo',
 
       userData: {
         department: 'department',
@@ -188,6 +188,7 @@ export default {
   body {
     margin: 0;
 
+    overflow-y: hidden;
     overflow-x: hidden;
 
     background: var(--main-background);

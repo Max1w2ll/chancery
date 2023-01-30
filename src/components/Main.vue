@@ -52,7 +52,7 @@
             <div class="ordersList">
                 <div class="order" v-for="order in ordersList" :key="order" @click="selectedOrderId = order.id; getOrderByID();">
                     <div class="header">
-                        <p class="number"> Заказ ID: {{order.id}} </p>
+                        <p class="number"> Номер заказа: {{order.id}} </p>
                         <p class="date"> {{order.createdAt.slice(0,10).replace(/-/g,".")}} </p>
                     </div>
                     <div class="productsAndStatus">
@@ -68,14 +68,13 @@
                     <p> Cоздайте новый по кнопке ниже </p>
                 </div>
             </div>
-            <button class="createOrderButton" @click="newOrder();"> Новый заказ </button>
         </div>
 
         <!-- Center, right side -->
         <div class="editor" v-if="selectedOrderId != undefined">
             <div class="title">
                 <p v-if="editing == false"> Новый товар </p>
-                <p v-if="editing == true"> Заказ ID: {{order.id}} </p>
+                <p v-if="editing == true"> Номер заказа: {{order.id}} </p>
                 <button class="closeEditorButton" @click="selectedOrderId = undefined"> ✖ </button>
             </div>
             <div id="productList" class="productList">
@@ -119,6 +118,7 @@
                 <img src="../assets/icons/nothingSelected.png" width="64" height="64">
                 <p> Заказ не выбран! </p>
                 <p> Выберите товар из списка, или создайте новый. </p>
+                <button class="createOrderButton" @click="newOrder();"> Новый заказ </button>
             </div>
         </div>
     </div>
@@ -140,13 +140,13 @@ export default {
     data() {
         return {
             // Get all orders
-            getOrdersLink: 'http://auth.fisb/chancery/api/employee/orders/all?',
+            getOrdersLink: 'https://auth.fisb/chancery/api/employee/orders/all',
             selectedOrderStatusList: 'Мои заказы',
 
             ordersList: () => [],
 
             // Get one order by ID
-            getOrderByIdLink: 'http://auth.fisb/chancery/api/employee/orders/all/',
+            getOrderByIdLink: 'https://auth.fisb/chancery/api/employee/orders/all/',
 
             selectedOrderId: undefined,
             order: [{}],
@@ -191,8 +191,9 @@ export default {
             })
         },
 
-        deleteProduct(element) {
-            element.path[1].remove();
+        deleteProduct(event) {
+            event.target.offsetParent.remove();
+            // element.path[1].remove();
         },
 
         getProducts() {
@@ -266,11 +267,11 @@ export default {
             }
 
             if (this.userData.role == 'globaladmin') {
-                this.getOrdersLink = 'http://auth.fisb/chancery/api/manager/orders/all?'
+                this.getOrdersLink = 'https://auth.fisb/chancery/api/manager/orders/all'
             }
 
             setTimeout(() => {
-                axios.get(this.getOrdersLink+status+dateForm+sortBy+search, { withCredentials: true })
+                axios.get(this.getOrdersLink+'?'+status+dateForm+sortBy+search, { withCredentials: true })
                 .then((res) => {
                     console.log(res);
                     this.ordersList = res.data.data;
@@ -283,7 +284,7 @@ export default {
             this.editing = true;
 
             if (this.userData.role == 'globaladmin') {
-                this.getOrderByIdLink = 'http://auth.fisb/chancery/api/manager/orders/all/'
+                this.getOrderByIdLink = 'https://auth.fisb/chancery/api/manager/orders/all/'
             }
             axios.get(this.getOrderByIdLink+this.selectedOrderId, { withCredentials: true })
             .then((res) => {
@@ -296,9 +297,9 @@ export default {
                 }
             });
         },
-
+    
         createOrder() {
-            axios.post(this.getOrdersLink, this.getProducts(), { withCredentials: true })
+            axios.post('https://auth.fisb/chancery/api/employee/orders/all', this.getProducts(), { withCredentials: true })
             .then((res) => {
                 console.log(res);
                 this.getOrders();
@@ -319,7 +320,7 @@ export default {
 
         deleteOrderByID() {
             if (this.userData.role == 'globaladmin') {
-                this.getOrderByIdLink = 'http://auth.fisb/chancery/api/manager/orders/all/';
+                this.getOrderByIdLink = 'https://auth.fisb/chancery/api/manager/orders/all/';
             }
 
             axios.delete(this.getOrderByIdLink+this.selectedOrderId, { withCredentials: true })
@@ -336,13 +337,13 @@ export default {
             let linkChangeOrderStatus = '';
             switch (selectedOrderStatus) {
                 case "Обрабатывается":
-                    linkChangeOrderStatus = 'http://auth.fisb/chancery/api/manager/orders/np';
+                    linkChangeOrderStatus = 'https://auth.fisb/chancery/api/manager/orders/np';
                     break;
                 case "Обработан":
-                    linkChangeOrderStatus = 'http://auth.fisb/chancery/api/manager/orders/ip';
+                    linkChangeOrderStatus = 'https://auth.fisb/chancery/api/manager/orders/ip';
                     break;
                 case "Выдан":
-                    linkChangeOrderStatus = 'http://auth.fisb/chancery/api/manager/orders/p';
+                    linkChangeOrderStatus = 'https://auth.fisb/chancery/api/manager/orders/p';
                     break;
             }
 
@@ -383,8 +384,10 @@ export default {
     .mainSection {
         display: flex;
 
-        height: 950px;
+        height: 915px;
         width: 100%;
+        
+        overflow-y: hidden;
 
         background: var(--main-background);
     }
@@ -512,7 +515,7 @@ export default {
         overflow-y: scroll;
         overflow-x: hidden;
 
-        height: 800px;
+        height: 905px;
         width: 300px;
     }
     .ordersList::-webkit-scrollbar-track {
@@ -609,11 +612,10 @@ export default {
         margin-top: 5px;
     }
 
-    .ordersSection .createOrderButton {
+    .createOrderButton {
         all: unset;
 
-        margin: 20px 0px 0px 15px;
-        padding: 0px 0px 0px 20px;
+        padding: 5px;
 
         height: 30px;
         width: 250px;
@@ -621,13 +623,13 @@ export default {
         font-family: var(--sub-font);
 
         color: var(--text-color);
-        background: var(--sub-background);
+        background: var(--sub-color);
 
         cursor: pointer;
 
         transition: .3s;
     }
-    .ordersSection .createOrderButton:hover {
+    .createOrderButton:hover {
         -webkit-transform: scale(1.1);
     }
 
@@ -877,6 +879,8 @@ export default {
     }
 
     .buttons {
+        padding-bottom: 30px;
+
         min-width: 950px;
     }
 
