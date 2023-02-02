@@ -32,21 +32,21 @@
                     </table>
                 </div>
                 <div>
-                    <p> Вывести список из промежутка </p>
-                    <select id="filterSettingSortBy">
+                    <p> Сортировка по дате: </p>
+                    <select class="filterSettingSortBy" id="filterSettingSortBy">
                         <option> Сначала новые </option>
                         <option> Сначала старые </option>
                     </select>
                 </div>
-                <button @click="closeFilterMenu(); getOrders();"> Поиск </button>
+                <button class="filterSearch" @click="closeFilterMenu(); getOrders();"> Поиск </button>
             </div>
         </div>
         <!-- Left side -->
         <div class="ordersSection">
             <div class="searchSection">
-                <input id="filterSettingSearch" @input="getOrders();" placeholder="Введите название заказа" v-model="searchOrdersInput">
+                <input id="filterSettingSearch" v-on:keyup.enter="getOrders();" placeholder="Введите название заказа" v-model="searchOrdersInput">
                 <div class="searchButton">
-                    <img src="../assets/icons/searchIcon.png">
+                    <img src="../assets/icons/searchIcon.png" @click="getOrders();">
                 </div>
             </div>
             <div class="ordersList">
@@ -79,15 +79,15 @@
             </div>
             <div id="productList" class="productList">
                 <div class="product" v-for="product in order.positions" :key="product">
-                    <textarea class="name" placeholder="Название товара" v-model="product.name"></textarea>
+                    <input class="name" placeholder="Название товара" v-model="product.name">
                     <button class="deleteProduct" @click="deleteProduct($event);"> ✖ </button>
                     <div class="productInfo">
-                        <textarea class="link" placeholder="Ссылка на товар" v-model="product.link"></textarea>
+                        <input class="link" placeholder="Ссылка на товар" v-model="product.link">
                         <br>
-                        <textarea class="desc" placeholder="Описание (не менее 4 символов)" v-model="product.description"></textarea>
+                        <input class="desc" placeholder="Описание (не менее 4 символов)" v-model="product.description">
                         <br>
-                        <textarea class="count" placeholder="Количество" v-model="product.count"></textarea>
-                        <textarea class="article" placeholder="Артикль" v-model="product.article"></textarea>
+                        <input class="count" placeholder="Количество" v-model="product.count">
+                        <input class="article" placeholder="Артикль" v-model="product.article">
                     </div>
                 </div>
                 <div class="noProducts" v-if="productExist == false"> 
@@ -104,7 +104,7 @@
             <p id="updatedAt" class="extendedInfo" v-if="productExist == true && userData.role == 'globaladmin' && editing == true"> Последние обновление в {{order.updatedAt}} </p>
             <div class="buttons" v-if="productExist == true">
                 <button class="saveButton"   v-if="editing == false" @click="createOrder()"> Сохранить новый заказ </button>
-                <button class="sendButton"   v-if="editing == true"  @click="editOrderByID()"> Обновить </button>
+                <button class="sendButton"   v-if="editing == true"  @click="editOrderByID(); orderChangeStatus();"> Обновить </button>
                 <button class="deleteButton" v-if="editing == true"  @click="deleteOrderByID();"> Удалить заказ </button>
                 <select id="selectOrderStatus" class="selectOrderStatus" v-if="editing == true && userData.role == 'globaladmin'">
                     <option>Обрабатывается</option>
@@ -306,16 +306,14 @@ export default {
             });
         },
 
-        editOrderByID() {
-            if (this.userData.role == 'globaladmin') {
-                this.orderChangeStatus();
+        async editOrderByID() {
+            try {
+                await axios.patch(this.getOrderByIdLink+this.selectedOrderId, this.getProducts(), { withCredentials: true })
             }
-            
-            axios.patch(this.getOrderByIdLink+this.selectedOrderId, this.getProducts(), { withCredentials: true })
-            .then((res) => {
-                console.log(res);
-                this.getOrders();
-            });
+            catch (e) {
+                console.log(e.response.data.message);
+                alert(e.response.data.message);
+            }
         },
 
         deleteOrderByID() {
@@ -332,7 +330,7 @@ export default {
             });
         },
 
-        orderChangeStatus() {
+        async orderChangeStatus() {
             let selectedOrderStatus = document.getElementById('selectOrderStatus').value;
             let linkChangeOrderStatus = '';
             switch (selectedOrderStatus) {
@@ -347,11 +345,13 @@ export default {
                     break;
             }
 
-            axios.patch(linkChangeOrderStatus, { "ids": [ this.selectedOrderId ] }, { withCredentials: true })
-            .then((res) => {
-                console.log(res);
-                this.getOrderByID();
-            });
+            try {
+                await axios.patch(linkChangeOrderStatus, { "ids": [ this.selectedOrderId ] }, { withCredentials: true })
+            }
+            catch (e) {
+                console.log(e.response.data.message);
+                alert(e.response.data.message);
+            }
         },
 
         //-------------------//
@@ -433,7 +433,7 @@ export default {
     }
 
     .filterTitle {
-        padding-left: 15px;
+        padding-left: 30px;
 
         font-family: var(--main-font);
         font-size: 18px;
@@ -444,11 +444,52 @@ export default {
     .filterSettings {
         margin-top: 25px;
         padding-left: 30px;
+        padding-right: 30px;
 
         font-family: var(--main-font);
         font-size: 16px;
 
         color: var(--text-color);
+    }
+
+    .filterSearch {
+        all: unset;
+        padding: 5px;
+
+        height: 30px;
+        width: -webkit-fill-available;
+
+        text-align: center;
+        font-family: var(--sub-font);
+
+        color: var(--text-color);
+        background: var(--sub-color);
+
+        cursor: pointer;
+        transition: .3s;
+    }
+    .filterSearch:hover {
+        -webkit-transform: scale(1.1);
+    }
+
+    .filterMenu select {
+        border: none;
+        border-bottom: 1px solid #969696;
+
+        font-family: var(--main-font);
+
+        color: var(--text-color);
+        background: var(--filter-menu-background);
+    }
+
+    .filterMenu input {
+        border: none;
+        border-bottom: 1px solid #969696;
+
+        font-family: var(--main-font);
+
+        color: var(--text-color);
+        background: var(--filter-menu-background);
     }
 
     .filterSettings div {
@@ -515,7 +556,7 @@ export default {
         overflow-y: scroll;
         overflow-x: hidden;
 
-        height: 905px;
+        height: 875px;
         width: 300px;
     }
     .ordersList::-webkit-scrollbar-track {
@@ -739,7 +780,7 @@ export default {
     .productList .product .deleteProduct:hover {
         color: var(--text-color-hover);
     }
-    .productList .product textarea {
+    .productList .product input {
         all: unset;
 
         margin: 20px 0px 0px 20px;
