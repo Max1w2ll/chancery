@@ -75,12 +75,12 @@
             <div class="title">
                 <p v-if="editing == false"> Новый товар </p>
                 <p v-if="editing == true"> Номер заказа: {{order.id}} </p>
-                <button class="closeEditorButton" @click="selectedOrderId = undefined"> ✖ </button>
+                <img class="closeEditorButton" src="icons/close.svg" @click="selectedOrderId = undefined; deleteModals();"/>
             </div>
             <div id="productList" class="productList">
                 <div class="product" v-for="product in order.positions" :key="product">
                     <input class="name" placeholder="Название товара" v-model="product.name">
-                    <button class="deleteProduct" @click="deleteProduct($event);"> ✖ </button>
+                    <img class="deleteProduct" src="icons/close.svg" @click="deleteProduct($event);"/>
                     <div class="productInfo">
                         <input class="link" placeholder="Ссылка на товар" v-model="product.link">
                         <br>
@@ -95,7 +95,7 @@
                     <p> Товары отсутствуют! </p> 
                     <p> Создайте новый, нажав на + </p>
                 </div>
-                <button class="addNewProduct" @click="addNewProduct();"> + </button>
+                <img class="addNewProduct" src="icons/add.svg" @click="addNewProduct();"/>
             </div>
             <textarea id="usernameTo" class="usernameTo" v-if="productExist == true" placeholder="Для кого заказ" v-model="order.usernameTo"/>
             <p id="orderStatus" class="extendedInfo" v-if="productExist == true && editing == true"> Текущий статус: {{order.status}} </p>
@@ -104,7 +104,8 @@
             <p id="updatedAt" class="extendedInfo" v-if="productExist == true && userData.role == 'globaladmin' && editing == true"> Последние обновление в {{order.updatedAt}} </p>
             <div class="buttons" v-if="productExist == true">
                 <button class="saveButton"   v-if="editing == false" @click="createOrder()"> Сохранить новый заказ </button>
-                <button class="sendButton"   v-if="editing == true"  @click="editOrderByID(); orderChangeStatus();"> Обновить </button>
+                <button class="sendButton"   v-if="editing == true"  @click="editOrderByID();"> Обновить </button>
+                <button class="sendButton"   v-if="editing == true && userData.role == 'globaladmin'"  @click="orderChangeStatus();"> Поменять статус </button>
                 <button class="deleteButton" v-if="editing == true"  @click="deleteOrderByID();"> Удалить заказ </button>
                 <select id="selectOrderStatus" class="selectOrderStatus" v-if="editing == true && userData.role == 'globaladmin'">
                     <option>Обрабатывается</option>
@@ -231,11 +232,11 @@ export default {
             let sortBy = document.getElementById('filterSettingSortBy').value
             let search = document.getElementById('filterSettingSearch').value
 
-            console.log(status)
-            console.log(dateFrom)
-            console.log(dateTo)
-            console.log(sortBy)
-            console.log(search)
+            // console.log(status)
+            // console.log(dateFrom)
+            // console.log(dateTo)
+            // console.log(sortBy)
+            // console.log(search)
 
             if (status != 'Любой') {
                 status = 'filter.status=%24eq%3A'+status;
@@ -273,9 +274,9 @@ export default {
             setTimeout(() => {
                 axios.get(this.getOrdersLink+'?'+status+dateForm+sortBy+search, { withCredentials: true })
                 .then((res) => {
-                    console.log(res);
+                    // console.log(res);
                     this.ordersList = res.data.data;
-                    console.log(this.ordersList);
+                    // console.log(this.ordersList);
                 });
             }, 500);
         },
@@ -288,9 +289,9 @@ export default {
             }
             axios.get(this.getOrderByIdLink+this.selectedOrderId, { withCredentials: true })
             .then((res) => {
-                console.log(res);
+                // console.log(res);
                 this.order = res.data;
-                console.log(this.order.positions);
+                // console.log(this.order.positions);
 
                 if (this.order.status == "Не обработан") {
                     this.editing = true;
@@ -309,25 +310,35 @@ export default {
         async editOrderByID() {
             try {
                 await axios.patch(this.getOrderByIdLink+this.selectedOrderId, this.getProducts(), { withCredentials: true })
+                .then((res) => {
+                    console.log(res);
+                    this.getOrders();
+                })
             }
             catch (e) {
-                console.log(e.response.data.message);
-                alert(e.response.data.message);
+                // console.log(e.response.data.message);
+                this.showModal(e.response.data.message);
             }
         },
 
-        deleteOrderByID() {
+        async deleteOrderByID() {
             if (this.userData.role == 'globaladmin') {
                 this.getOrderByIdLink = 'https://auth.fisb/chancery/api/manager/orders/all/';
             }
 
-            axios.delete(this.getOrderByIdLink+this.selectedOrderId, { withCredentials: true })
-            .then((res) => {
-                console.log(res);
-                this.selectedOrderId = undefined;
-                this.order = res.data;
-                this.getOrders();
-            });
+            try {
+                await axios.delete(this.getOrderByIdLink+this.selectedOrderId, { withCredentials: true })
+                .then((res) => {
+                    console.log(res);
+                    this.selectedOrderId = undefined;
+                    this.order = res.data;
+                    this.getOrders();
+                });
+            }
+            catch (e) {
+                // console.log(e.response.data.message);
+                this.showModal(e.response.data.message);
+            }
         },
 
         async orderChangeStatus() {
@@ -347,10 +358,14 @@ export default {
 
             try {
                 await axios.patch(linkChangeOrderStatus, { "ids": [ this.selectedOrderId ] }, { withCredentials: true })
+                .then((res) => {
+                    console.log(res);
+                    this.getOrders();
+                })
             }
             catch (e) {
-                console.log(e.response.data.message);
-                alert(e.response.data.message);
+                // console.log(e.response.data.message);
+                this.showModal(e.response.data.message);
             }
         },
 
@@ -361,6 +376,49 @@ export default {
         closeFilterMenu() { // openFilterMenu -> Header.vue
             document.getElementById('filterMenu').style.width = '0px';
         },
+
+        showModal(message) {
+            this.deleteModals();
+
+            let modalWindow = document.createElement('div');
+            modalWindow.className = "modalWindow";
+            document.body.appendChild(modalWindow);
+
+            let modalTitle = document.createElement('p');
+            modalTitle.className = "modalTitle";
+            modalTitle.textContent = "Ошибка!";
+            modalWindow.appendChild(modalTitle);
+
+            let modalCloseIcon = document.createElement('img');
+            modalCloseIcon.className = "modalCloseIcon";
+            modalCloseIcon.src = "icons/close.svg";
+            modalWindow.appendChild(modalCloseIcon);
+
+            modalCloseIcon.addEventListener("click", () => {
+                modalWindow.remove();
+            })
+
+            let modalContent = document.createElement('div');
+            modalContent.className = "modalContent";
+            modalWindow.appendChild(modalContent);
+
+            let modalIcon = document.createElement('img');
+            modalIcon.className = "modalIcon";
+            modalIcon.src = "icons/warning.svg";
+            modalContent.appendChild(modalIcon);
+
+            let modalMessage = document.createElement('span');
+            modalTitle.className = "modalTitle";
+            modalMessage.textContent = message;
+            modalContent.appendChild(modalMessage);
+        },
+
+        deleteModals() {
+            let modalWindows = document.querySelectorAll('.modalWindow');
+            for (let i = 0; i < modalWindows.length; i++) {
+                modalWindows[i].remove();
+            }
+        }
     },
 
     mounted() {
@@ -713,17 +771,13 @@ export default {
 
         border: 0;
 
-        font-size: 18px;
-
-        color: var(--text-color);
-        background: none;
-
+        filter: invert(1);
         cursor: pointer;
 
-        transition: .3s;
+        transition: 0.3s;
     }
     .editor .title .closeEditorButton:hover {
-        color: var(--text-color-hover);
+        filter: invert(0.7);
     }
     .editor .title p {
         margin: 30px;
@@ -768,17 +822,13 @@ export default {
 
         border: 0;
 
-        font-size: 18px;
-
-        color: var(--text-color);
-        background: none;
-
+        filter: invert(1);
         cursor: pointer;
 
-        transition: .3s;
+        transition: 0.3s;
     }
     .productList .product .deleteProduct:hover {
-        color: var(--text-color-hover);
+        filter: invert(0.7);
     }
     .productList .product input {
         all: unset;
@@ -830,22 +880,18 @@ export default {
     }
 
     .productList .addNewProduct {
-        height: 20px;
-        width: 20px;
+        height: 30px;
+        width: 30px;
 
         border: 0;
 
-        font-size: 32px;
-
-        color: var(--text-color);
-        background: none;
-
+        filter: invert(1);
         cursor: pointer;
 
-        transition: .3s;
+        transition: 0.3s;
     }
     .productList .addNewProduct:hover {
-        color: var(--text-color-hover);
+        filter: invert(0.7);
     }
 
     .editor .usernameTo {
@@ -1029,6 +1075,69 @@ export default {
     }
     .nothingSelected .textAndImage {
         margin-top: 70px;
+    }
+
+    /*-------*/
+    /* Other */
+    /*-------*/
+
+    .modalWindow {
+        right: 110px;
+        top: 70px;
+
+        padding-bottom: 10px;
+
+        position: absolute;
+
+        height: fit-content;
+        width: 340px;
+
+        font-family: var(--main-font);
+        font-size: 14px;
+
+        color: var(--text-color);
+        background: var(--sub-color);
+    }
+
+    .modalWindow .modalTitle {
+        margin: 5px 10px;
+
+        font-size: 18px;
+    }
+
+    .modalWindow .modalCloseIcon {
+        top: 5px;
+        right: 5px;
+
+        position: absolute;
+
+        height: 24px;
+        width: 24px;
+
+        filter: invert(1);
+        cursor: pointer;
+
+        transition: 0.3s;
+    }
+    .modalWindow .modalCloseIcon:hover {
+        filter: invert(0.7);
+    }
+
+    .modalWindow .modalContent {
+        display: flex;
+        align-items: center;
+
+        height: auto;
+        width: auto;
+    }
+
+    .modalWindow .modalContent .modalIcon {
+        margin: 3px 20px 5px 20px;
+
+        height: 46px;
+        min-width: 46px;
+
+        filter: invert(1);
     }
 
 </style>

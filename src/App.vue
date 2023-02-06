@@ -42,7 +42,7 @@ export default {
     getUserInfo() {
       axios.get(this.getUserLink)
       .then((res) => {
-        console.log(res);
+        // console.log(res);
         this.userData.department  = res.data.department;
         this.userData.displayName = res.data.displayName;
         this.userData.email = res.data.email;
