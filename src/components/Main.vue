@@ -52,11 +52,12 @@
             <div class="ordersList">
                 <div class="order" v-for="order in ordersList" :key="order" @click="selectedOrderId = order.id; getOrderByID();">
                     <div class="header">
-                        <p class="number"> Номер заказа: {{order.id}} </p>
-                        <p class="date"> {{order.createdAt.slice(0,10).replace(/-/g,".")}} </p>
+                        <p class="number"> № {{order.id}} </p>
+                        <p class="usernameTo">{{order.username}} </p>
+                        <!-- <p class="date"> {{order.createdAt.slice(0,10).replace(/-/g,".")}} </p> -->
                     </div>
                     <div class="productsAndStatus">
-                        <div class="productsList"> 
+                        <div class="productsList">
                             <p class="productsName" v-for="product in order.positions" :key="product"> {{product.name}} </p>
                         </div>
                         <p class="status"> {{order.status}} </p>
@@ -75,12 +76,12 @@
             <div class="title">
                 <p v-if="editing == false"> Новый товар </p>
                 <p v-if="editing == true"> Номер заказа: {{order.id}} </p>
-                <img class="closeEditorButton" src="icons/close.svg" @click="selectedOrderId = undefined; deleteModals();"/>
+                <img class="closeEditorButton" src="icons/close.png" @click="selectedOrderId = undefined; deleteModals();"/>
             </div>
             <div id="productList" class="productList">
                 <div class="product" v-for="product in order.positions" :key="product">
                     <input class="name" placeholder="Название товара" v-model="product.name">
-                    <img class="deleteProduct" src="icons/close.svg" @click="deleteProduct($event);"/>
+                    <img class="deleteProduct" src="icons/close.png" @click="deleteProduct($event);"/>
                     <div class="productInfo">
                         <input class="link" placeholder="Ссылка на товар" v-model="product.link">
                         <br>
@@ -95,7 +96,7 @@
                     <p> Товары отсутствуют! </p> 
                     <p> Создайте новый, нажав на + </p>
                 </div>
-                <img class="addNewProduct" src="icons/add.svg" @click="addNewProduct();"/>
+                <img class="addNewProduct" src="../assets/icons/add.png" @click="addNewProduct();"/>
             </div>
             <textarea id="usernameTo" class="usernameTo" v-if="productExist == true" placeholder="Для кого заказ" v-model="order.usernameTo"/>
             <p id="orderStatus" class="extendedInfo" v-if="productExist == true && editing == true"> Текущий статус: {{order.status}} </p>
@@ -391,7 +392,7 @@ export default {
 
             let modalCloseIcon = document.createElement('img');
             modalCloseIcon.className = "modalCloseIcon";
-            modalCloseIcon.src = "icons/close.svg";
+            modalCloseIcon.src = "icons/close.png";
             modalWindow.appendChild(modalCloseIcon);
 
             modalCloseIcon.addEventListener("click", () => {
@@ -463,12 +464,13 @@ export default {
         height: 100%;
         width: 0;
         
-        background-color: var(--filter-menu-background);
+        background-color: var(--main-color);
         overflow-x: hidden;
 
         white-space: nowrap;
 
-        transition: 0.5s;
+        transition: 0.3s;
+        transition-timing-function: ease-in-out;
     }
 
     .filterMenu .header {
@@ -518,26 +520,29 @@ export default {
         width: -webkit-fill-available;
 
         text-align: center;
-        font-family: var(--sub-font);
+        font-family: var(--main-font);
 
-        color: var(--text-color);
-        background: var(--sub-color);
+        border: 1px solid #fff;
+
+        color: var(--main-color);
+        background: var(--text-color);
 
         cursor: pointer;
         transition: .3s;
     }
     .filterSearch:hover {
-        -webkit-transform: scale(1.1);
+        color: var(--text-color);
+        background: var(--main-color);
     }
 
     .filterMenu select {
         border: none;
-        border-bottom: 1px solid #969696;
+        border-bottom: 1px solid var(--text-color);
 
         font-family: var(--main-font);
 
         color: var(--text-color);
-        background: var(--filter-menu-background);
+        background: var(--main-color);
     }
 
     .filterMenu input {
@@ -547,7 +552,7 @@ export default {
         font-family: var(--main-font);
 
         color: var(--text-color);
-        background: var(--filter-menu-background);
+        background: var(--main-color);
     }
 
     .filterSettings div {
@@ -574,9 +579,11 @@ export default {
         display: flex;
 
         height: 40px;
-        width: 300px;
+        width: 298px;
 
-        background: var(--sub-background);
+        border: 1px solid rgba(39,103,201,.2);
+
+        color: var(--main-color);
     }
 
     .searchSection input {
@@ -587,13 +594,16 @@ export default {
         width: 240px;
         height: 20px;
 
-        border-bottom: 1px solid white;
+        border-bottom: 1px solid var(--main-color);
 
         font-family: var(--main-font);
         font-size: 14px;
 
-        color: var(--text-color);
+        color: var(--main-color);
         background: transparent;
+    }
+    .searchSection input::placeholder {
+        color: var(--main-color);
     }
 
     .searchSection .searchButton {
@@ -637,8 +647,10 @@ export default {
 
         font-family: var(--main-font);
 
-        color: var(--text-color);
-        background: var(--sub-background);
+        border: 1px solid rgba(39,103,201,.2);
+
+        color: var(--main-color);
+        background: #fff;
 
         cursor: pointer;
 
@@ -654,6 +666,7 @@ export default {
         height: 40px;
         width: 270px;
 
+        color: var(--text-color);
         background: var(--sub-color);
     }
     .order .header .date{
@@ -663,9 +676,22 @@ export default {
     }
     .order .header p {
         padding: 0px 0px 0px 20px;
+        margin: auto 0;
+
+        height: 20px;
 
         font-family: var(--main-font);
         font-size: 14px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .order .header .number {
+        width: 40px;
+    }
+    .order .header .usernameTo {
+        padding: 0px 0px 0px 10px;
+        width: 200px;
     }
 
     .order .productsAndStatus {
@@ -679,13 +705,15 @@ export default {
         display: flex;
 
         height: 38px;
+        width: 215px;
 
+        overflow-x: hidden;
         font-size: 12px;
         white-space: nowrap;
         overflow-x: hidden;
         text-overflow: ellipsis;
 
-        color: var(--text-color-hover);
+        color: var(--main-color);
     }
     .productsAndStatus .productsName {
         margin-right: 10px;
@@ -705,7 +733,7 @@ export default {
         font-size: 16px;
         text-align: center;
 
-        color: var(--text-color);
+        color: var(--main-color);
     }
     .noOrders p {
         margin-top: 5px;
@@ -719,7 +747,9 @@ export default {
         height: 30px;
         width: 250px;
 
-        font-family: var(--sub-font);
+        border: 1px solid;
+
+        font-family: var(--main-font);
 
         color: var(--text-color);
         background: var(--sub-color);
@@ -729,7 +759,8 @@ export default {
         transition: .3s;
     }
     .createOrderButton:hover {
-        -webkit-transform: scale(1.1);
+        color: var(--sub-color);
+        background: var(--text-color);
     }
 
     /*---------------------*/
@@ -758,7 +789,7 @@ export default {
     .editor .title {
         display: flex;
 
-        color: var(--text-color);
+        color: var(--main-color);
     }
     .editor .title .closeEditorButton {
         margin-top: 20px;
@@ -771,13 +802,9 @@ export default {
 
         border: 0;
 
-        filter: invert(1);
         cursor: pointer;
 
         transition: 0.3s;
-    }
-    .editor .title .closeEditorButton:hover {
-        filter: invert(0.7);
     }
     .editor .title p {
         margin: 30px;
@@ -804,7 +831,8 @@ export default {
         width: 95%;
         min-width: 950px;
 
-        background: var(--left-side-background);
+        background-color: #fff;
+        border: 1px solid rgba(39,103,201,.2);
     }
     .productList .product .productInfo{
         margin-left: 50px;
@@ -822,13 +850,9 @@ export default {
 
         border: 0;
 
-        filter: invert(1);
         cursor: pointer;
 
         transition: 0.3s;
-    }
-    .productList .product .deleteProduct:hover {
-        filter: invert(0.7);
     }
     .productList .product input {
         all: unset;
@@ -844,9 +868,15 @@ export default {
 
         font-family: var(--main-font);
         font-size: 16px;
+        white-space: nowrap;
+        overflow-x: hidden;
+        text-overflow: ellipsis;
 
-        color: var(--text-color);
+        color: var(--main-color);
         background: transparent;
+    }
+    .productList .product input::placeholder {
+        color: var(--main-color);
     }
     .productList .product .name {
         margin-bottom: 5px;
@@ -876,7 +906,7 @@ export default {
         font-size: 18px;
         text-align: center;
 
-        color: var(--text-color);
+        color: var(--main-color);
     }
 
     .productList .addNewProduct {
@@ -885,13 +915,9 @@ export default {
 
         border: 0;
 
-        filter: invert(1);
         cursor: pointer;
 
         transition: 0.3s;
-    }
-    .productList .addNewProduct:hover {
-        filter: invert(0.7);
     }
 
     .editor .usernameTo {
@@ -907,10 +933,11 @@ export default {
         border: none;
         border-bottom: 1px solid rgb(150, 150, 150);
 
+        overflow-y: hidden;
         font-family: var(--main-font);
         font-size: 22px;
 
-        color: var(--text-color);
+        color: var(--main-color);
         background: transparent;
     }
 
@@ -927,7 +954,7 @@ export default {
         font-family: var(--main-font);
         font-size: 18px;
 
-        color: var(--text-color);
+        color: var(--main-color);
         background: transparent;
     }
 
@@ -979,7 +1006,9 @@ export default {
         height: 30px;
         width: 200px;
 
-        font-family: var(--sub-font);
+        border: 1px solid;
+
+        font-family: var(--main-font);
         font-size: 16px;
         text-align: center;
 
@@ -991,7 +1020,8 @@ export default {
         transition: .3s;
     }
     .buttons .sendButton:hover {
-        -webkit-transform: scale(1.1);
+        color: var(--main-color);
+        background: var(--main-background);
     }
 
     .buttons .saveButton {
@@ -1003,7 +1033,7 @@ export default {
         height: 30px;
         width: 200px;
 
-        font-family: var(--sub-font);
+        font-family: var(--main-font);
         font-size: 16px;
         text-align: center;
 
@@ -1026,7 +1056,9 @@ export default {
         height: 30px;
         width: 200px;
 
-        font-family: var(--sub-font);
+        border: 1px solid;
+
+        font-family: var(--main-font);
         font-size: 16px;
         text-align: center;
 
@@ -1038,7 +1070,8 @@ export default {
         transition: .3s;
     }
     .buttons .deleteButton:hover {
-        -webkit-transform: scale(1.1);
+        color: var(--deleteButton-background);
+        background: var(--text-color);
     }
 
     .buttons .selectOrderStatus {
@@ -1049,7 +1082,7 @@ export default {
 
         border: none;
 
-        font-family: var(--sub-font);
+        font-family: var(--main-font);
         font-size: 16px;
         text-align: center;
 
@@ -1071,7 +1104,7 @@ export default {
         font-size: 18px;
         text-align: center;
 
-        color: var(--text-color);
+        color: var(--main-color);
     }
     .nothingSelected .textAndImage {
         margin-top: 70px;
@@ -1096,7 +1129,7 @@ export default {
         font-size: 14px;
 
         color: var(--text-color);
-        background: var(--sub-color);
+        background: var(--error-background);
     }
 
     .modalWindow .modalTitle {
@@ -1114,13 +1147,11 @@ export default {
         height: 24px;
         width: 24px;
 
-        filter: invert(1);
         cursor: pointer;
 
+        filter: brightness(0) invert(1);
+
         transition: 0.3s;
-    }
-    .modalWindow .modalCloseIcon:hover {
-        filter: invert(0.7);
     }
 
     .modalWindow .modalContent {

@@ -71,54 +71,52 @@ export default {
       darkLayer.appendChild(authSection);
 
       let userIcon = document.createElement('img');
-      userIcon.src = require('./assets/icons/userIcon.png');
+      userIcon.src = require('./assets/icons/logo.png');
       userIcon.className = 'userIcon';
       authSection.appendChild(userIcon);
 
       let title = document.createElement('p');
-      title.textContent = 'Вы не авторизованы';
+      title.textContent = 'ВОЙДИТЕ В СИСТЕМУ';
       title.className = 'title';
       authSection.appendChild(title);
-
-      let description = document.createElement('p');
-      description.textContent = 'Введите данные для входа в учётную запись.';
-      description.className = 'description';
-      authSection.appendChild(description);
 
       let inputsForm = document.createElement('form');
       inputsForm.className = 'inputsForm';
       authSection.appendChild(inputsForm);
 
+      let usernameSection = document.createElement('div');
+      usernameSection.className = 'usernameSection';
+      inputsForm.appendChild(usernameSection);
+
+      let usernameLabel = document.createElement('label');
+      usernameLabel.textContent = "Почта"
+      usernameSection.appendChild(usernameLabel);
+
       let username = document.createElement('input');
-      username.placeholder = "Имя пользователя"
-      inputsForm.appendChild(username);
+      usernameSection.appendChild(username);
+
+      let usernameIcon = document.createElement('img');
+      usernameIcon.className = "usernameIcon";
+      usernameIcon.src = require('./assets/icons/usernameIcon.png');
+      usernameSection.appendChild(usernameIcon);
 
       let passwordSection = document.createElement('div');
       passwordSection.className = 'passwordSection';
       inputsForm.appendChild(passwordSection);
 
+      let passwordLabel = document.createElement('label');
+      passwordLabel.textContent = "Пароль"
+      passwordSection.appendChild(passwordLabel);
+
       let password = document.createElement('input');
-      password.placeholder = "Пароль"
       password.type = 'password'
       password.className = 'password';
       passwordSection.appendChild(password);
 
-      let eyeIcon = document.createElement('img');
-      eyeIcon.src = require('./assets/icons/eyeIconClosed.png');
-      eyeIcon.className = 'eyeIcon';  
-      passwordSection.appendChild(eyeIcon);
-
-      eyeIcon.addEventListener("click", function () {
-        eyeIcon.src = 'eyeIcon.png';
-        if (password.getAttribute('type') == 'password') {
-          password.type = 'text';
-          eyeIcon.src = require('./assets/icons/eyeIcon.png');
-        }
-        else {
-          password.type = 'password';
-          eyeIcon.src = require('./assets/icons/eyeIconClosed.png');
-        }
-      });
+      let passwordIcon = document.createElement('img');
+      passwordIcon.className = "passwordIcon";
+      passwordIcon.src = require('./assets/icons/passwordIcon.png');
+      passwordSection.appendChild(passwordIcon);
 
       let submitButton = document.createElement('button');
       submitButton.textContent = 'Войти';
@@ -161,8 +159,7 @@ export default {
   }
 
   :root {
-    --main-font: "Roboto";
-    --sub-font: monospace;
+    --main-font: "Open Sans", "Segoe UI", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;;
     --text-color: #ffffff;
     --text-color-hover: #d2d2d2;
     --text-color-active: #999999;
@@ -171,18 +168,19 @@ export default {
     --button-hover: #405c91;
     --button-active: #7d98c9;
 
-    --main-color: #273a52;
-    --sub-color: #324a6a;
-    --main-background: #0e1722;
-    --sub-background: #172230;
+    --main-color: #2767c9;
+    --sub-color: #2767c9;
+    --main-background: #f1f8ff;
+    --sub-background: #182D57;
 
-    --left-side-background: #060a10;
-    --left-side-scrollbar-track: #273a52;
-    --left-side-scrollbar-thumb: #9b9b9b;
+    --left-side-background: #f1f8ff;
+    --left-side-scrollbar-track: #d3e0ed;
+    --left-side-scrollbar-thumb: #2767c9;
 
-    --filter-menu-background: #18273a;
+    --deleteButton-background: #f44336;
 
-    --deleteButton-background: #781c1c;
+    --success-background: #429974;
+    --error-background: #f44336;
   }
 
   body {
@@ -211,37 +209,41 @@ export default {
 
   .authSection {
     margin: auto;
+    padding: 32px;
 
-    display: table-cell;
-    vertical-align: middle;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 
-    height: 500px;
-    width: 350px;
+    height: 434px;
+    width: 334px;
 
-    border-radius: 5px;
+    border: 1px solid var(--main-color);
 
-    text-align: center;
-
-    background-color: var(--sub-color)
+    justify-content: start;
+    background-color: #fff;
   }
 
   .authSection .userIcon {
-    margin-top: 30px;
+    margin: 0 0 32px;
 
-    height: 96px;
-    width: 96px;
+    height: 160px;
+    width: 200px;
   }
 
   .authSection p {
     font-family: var(--main-font);
 
-    color: var(--text-color);
+    color: var(--main-color);
   }
 
   .authSection .title {
-    margin-top: 15px;
+    margin-top: 0;
 
-    font-size: 20px; 
+    font-size: 25px;
+    margin-bottom: 32px;
+
+    text-transform: uppercase; 
   }
 
   .authSection .description {
@@ -255,76 +257,85 @@ export default {
   }
 
   .authSection .inputsForm {
-    margin: auto;
-
     height: 200px;
-    width: 300px;
+    width: -webkit-fill-available;
   }  
 
   .authSection .inputsForm input {
-    padding-left: 10px;
-    margin-bottom: 10px;
+    padding: 15px 0 4px 8px;
 
-    height: 40px;
-    width: 270px;
-
-    border: 1px solid #adadad;
-    border-radius: 2px;
     outline: none;
+    border: none;
+
+    width: 280px;
+
+    font-family: var(--main-font);
+    font-size: 17px;
+
+    color: var(--main-color);
+    background: transparent;
+  }
+
+  .authSection .inputsForm label {
+    margin-left: 7px;
+
+    position: absolute;
 
     font-family: var(--main-font);
 
-    color: var(--text-color);
-    background: transparent;
+    opacity: 0.7;
+    color: var(--main-color);
 
-    transition: 0.2s;
-  }
-  .authSection .inputsForm input:focus-visible {
-    border: 1px solid #e0e0e0;
-  }
-  .authSection .inputsForm input::placeholder {
-    color: var(--text-color);
+    font-size: 13px;
   }
 
-  .authSection .inputsForm .eyeIcon {
-    position: absolute;
-    transform: translate(-40px, 10px);
+  .authSection .inputsForm .usernameIcon {
+    margin-left: 11px;
 
-    height: 24px;
-    width: 24px;
+    transform: translateY(1px);
 
-    cursor: pointer;
+    height: 22px;
+    width: 20px;
   }
-  .authSection .inputsForm .eyeIcon:hover {
-    filter: invert(0.1);
+
+  .authSection .inputsForm .passwordIcon {
+    margin-left: 13px;
+
+    height: 20px;
+    width: 16px;
+  }
+
+  .usernameSection {
+    margin-bottom: 8px;
+
+    height: 46px;
+
+    border: 1px solid var(--main-color);
+  }
+  .passwordSection {
+    margin-bottom: 8px;
+
+    height: 46px;
+
+    border: 1px solid var(--main-color);
   }
 
   .authSection .inputsForm button {
-    all: unset;
+    align-items: center;
 
-    margin-top: 30px;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
 
     height: 40px;
-    width: 285px;
+    width: 100%;
 
-    border-radius: 2px;
-
-    font-family: var(--main-font);
-    font-size: 14px;
-
+    background-color: var(--main-color);
     color: var(--text-color);
 
-    background: var(--button-idle);
+    border: none;
 
-    transition: 0.4s;
-  }
-  .authSection .inputsForm button:hover {
-    cursor: pointer;
-
-    background: var(--button-hover);
-  }
-  .authSection .inputsForm button:active {
-    background: var(--button-active);
+    transition: all 0.01s ease-in-out 0s;
   }
   
 </style>

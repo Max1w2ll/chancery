@@ -5,6 +5,7 @@
             <p class="menuTitle"> Меню </p>
         </div>
         <div class="userSection">
+            <p class="corpPortal" @click="window.location.href = 'https://auth.fisb/';"> Корпоративный портал </p>
             <p class="logOut"> Выйти </p>
         </div>
     </div>
@@ -109,9 +110,7 @@ export default {
         color: var(--text-color);
     }
     
-    .userSection .logOut {
-        right: 10px;
-
+    .userSection p {
         margin: 12.5px 10px 12.5px 10px;
 
         position: absolute;
@@ -123,7 +122,13 @@ export default {
 
         cursor: pointer;
     }
-    .userSection .logOut:hover {
+    .userSection .corpPortal {
+        right: 90px;
+    }
+    .userSection .logOut {
+        right: 10px;
+    }
+    .userSection p:hover {
         color: var(--text-color-hover);
     }
 </style>
