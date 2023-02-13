@@ -79,18 +79,18 @@
                 <img class="closeEditorButton" src="icons/close.png" @click="selectedOrderId = undefined; deleteModals();"/>
             </div>
             <div id="productList" class="productList">
-                <div class="product" v-for="product in order.positions" :key="product">
-                    <input class="name" placeholder="Название товара" v-model="product.name">
+                <form id="test" class="product" v-for="product in order.positions" :key="product">
+                    <input class="name" required minlength="4" maxlength="256" placeholder="Название товара" v-model="product.name">
                     <img class="deleteProduct" src="icons/close.png" @click="deleteProduct($event);"/>
                     <div class="productInfo">
-                        <input class="link" placeholder="Ссылка на товар" v-model="product.link">
+                        <input class="link" type="url" required minlength="4" maxlength="256" placeholder="Ссылка на товар" v-model="product.link">
                         <br>
-                        <input class="desc" placeholder="Описание (не менее 4 символов)" v-model="product.description">
+                        <input class="desc" required minlength="4" maxlength="512" placeholder="Описание (не менее 4 символов)" v-model="product.description">
                         <br>
-                        <input class="count" placeholder="Количество" v-model="product.count">
-                        <input class="article" placeholder="Артикль" v-model="product.article">
+                        <input class="count" required type="number" min="1" max="1000" placeholder="Количество" v-model="product.count">
+                        <input class="article" required type="number" minlength="1" maxlength="20" placeholder="Артикль" v-model="product.article">
                     </div>
-                </div>
+                </form>
                 <div class="noProducts" v-if="productExist == false"> 
                     <img src="../assets/icons/noProducts.png" width="52" height="52">
                     <p> Товары отсутствуют! </p> 
@@ -104,7 +104,7 @@
             <p id="createdAt" class="extendedInfo" v-if="productExist == true && userData.role == 'globaladmin' && editing == true"> Создано в {{order.createdAt}} </p>
             <p id="updatedAt" class="extendedInfo" v-if="productExist == true && userData.role == 'globaladmin' && editing == true"> Последние обновление в {{order.updatedAt}} </p>
             <div class="buttons" v-if="productExist == true">
-                <button class="saveButton"   v-if="editing == false" @click="createOrder()"> Сохранить новый заказ </button>
+                <button class="saveButton" type="submit" form="test" v-if="editing == false" @click.prevent="createOrder()"> Сохранить новый заказ </button>
                 <button class="sendButton"   v-if="editing == true"  @click="editOrderByID();"> Обновить </button>
                 <button class="sendButton"   v-if="editing == true && userData.role == 'globaladmin'"  @click="orderChangeStatus();"> Поменять статус </button>
                 <button class="deleteButton" v-if="editing == true"  @click="deleteOrderByID();"> Удалить заказ </button>
@@ -275,9 +275,7 @@ export default {
             setTimeout(() => {
                 axios.get(this.getOrdersLink+'?'+status+dateForm+sortBy+search, { withCredentials: true })
                 .then((res) => {
-                    // console.log(res);
                     this.ordersList = res.data.data;
-                    // console.log(this.ordersList);
                 });
             }, 500);
         },
@@ -290,35 +288,64 @@ export default {
             }
             axios.get(this.getOrderByIdLink+this.selectedOrderId, { withCredentials: true })
             .then((res) => {
-                // console.log(res);
                 this.order = res.data;
-                // console.log(this.order.positions);
 
                 if (this.order.status == "Не обработан") {
                     this.editing = true;
                 }
-            });
-        },
-    
-        createOrder() {
-            axios.post('https://auth.fisb/chancery/api/employee/orders/all', this.getProducts(), { withCredentials: true })
-            .then((res) => {
-                console.log(res);
-                this.getOrders();
+
+                // Removing and replace extra characters from strings
+                this.order.createdAt = this.order.createdAt.replace("-", ".");
+                this.order.createdAt = this.order.createdAt.replace("-", ".");
+                this.order.createdAt = this.order.createdAt.replace("T", " ");
+                this.order.createdAt = this.order.createdAt.replace(".000Z", "");                
+
+                this.order.updatedAt = this.order.updatedAt.replace("-", ".");
+                this.order.updatedAt = this.order.updatedAt.replace("-", ".");
+                this.order.updatedAt = this.order.updatedAt.replace("T", " ");
+                this.order.updatedAt = this.order.updatedAt.replace(".000Z", "");   
             });
         },
 
-        async editOrderByID() {
-            try {
-                await axios.patch(this.getOrderByIdLink+this.selectedOrderId, this.getProducts(), { withCredentials: true })
-                .then((res) => {
-                    console.log(res);
-                    this.getOrders();
-                })
+        checkValidation() {
+            let products = document.getElementsByClassName("product");
+            for(let i = 0; i < products.length; i++) {
+                if(!(products[i].checkValidity())) {
+                    products[i].reportValidity();
+                    return false;
+                }
             }
-            catch (e) {
-                // console.log(e.response.data.message);
-                this.showModal(e.response.data.message);
+            return true;
+        },
+    
+        async createOrder() {
+            if (await this.checkValidation()) {
+                try {
+                    await axios.post('https://auth.fisb/chancery/api/employee/orders/all', this.getProducts(), { withCredentials: true })
+                    .then((res) => {
+                        this.showModal("Заказ создан!", true);
+                        this.getOrders();
+                    });
+                }
+                catch (e) {
+                    this.showModal(e.response.data.message, false);
+                }
+            }
+        },
+
+        async editOrderByID() {
+            if (await this.checkValidation()) {
+                try {
+                    await axios.patch(this.getOrderByIdLink+this.selectedOrderId, this.getProducts(), { withCredentials: true })
+                    .then((res) => {
+                        this.showModal("Заказ редактирован!", true);
+                        this.getOrders();
+                    })
+                }
+                catch (e) {
+                    // console.log(e.response.data.message);
+                    this.showModal(e.response.data.message, false);
+                }
             }
         },
 
@@ -330,43 +357,44 @@ export default {
             try {
                 await axios.delete(this.getOrderByIdLink+this.selectedOrderId, { withCredentials: true })
                 .then((res) => {
-                    console.log(res);
+                    this.showModal("Заказ удалён!", true);
                     this.selectedOrderId = undefined;
                     this.order = res.data;
                     this.getOrders();
                 });
             }
             catch (e) {
-                // console.log(e.response.data.message);
-                this.showModal(e.response.data.message);
+                this.showModal(e.response.data.message, false);
             }
         },
 
         async orderChangeStatus() {
-            let selectedOrderStatus = document.getElementById('selectOrderStatus').value;
-            let linkChangeOrderStatus = '';
-            switch (selectedOrderStatus) {
-                case "Обрабатывается":
-                    linkChangeOrderStatus = 'https://auth.fisb/chancery/api/manager/orders/np';
-                    break;
-                case "Обработан":
-                    linkChangeOrderStatus = 'https://auth.fisb/chancery/api/manager/orders/ip';
-                    break;
-                case "Выдан":
-                    linkChangeOrderStatus = 'https://auth.fisb/chancery/api/manager/orders/p';
-                    break;
-            }
+            if (this.checkValidation()) {
+                let selectedOrderStatus = document.getElementById('selectOrderStatus').value;
+                let linkChangeOrderStatus = '';
+                switch (selectedOrderStatus) {
+                    case "Обрабатывается":
+                        linkChangeOrderStatus = 'https://auth.fisb/chancery/api/manager/orders/np';
+                        break;
+                    case "Обработан":
+                        linkChangeOrderStatus = 'https://auth.fisb/chancery/api/manager/orders/ip';
+                        break;
+                    case "Выдан":
+                        linkChangeOrderStatus = 'https://auth.fisb/chancery/api/manager/orders/p';
+                        break;
+                }
 
-            try {
-                await axios.patch(linkChangeOrderStatus, { "ids": [ this.selectedOrderId ] }, { withCredentials: true })
-                .then((res) => {
-                    console.log(res);
-                    this.getOrders();
-                })
-            }
-            catch (e) {
-                // console.log(e.response.data.message);
-                this.showModal(e.response.data.message);
+                try {
+                    await axios.patch(linkChangeOrderStatus, { "ids": [ this.selectedOrderId ] }, { withCredentials: true })
+                    .then((res) => {
+                        this.showModal("Статус заказа обновлён!", true);
+                        this.getOrders();
+                    })
+                }
+                catch (e) {
+                    // console.log(e.response.data.message);
+                    this.showModal(e.response.data.message, false);
+                }
             }
         },
 
@@ -378,16 +406,17 @@ export default {
             document.getElementById('filterMenu').style.width = '0px';
         },
 
-        showModal(message) {
+        showModal(message, status) {  // Status - Warning message or success? Warning - false. Success - true.
             this.deleteModals();
 
             let modalWindow = document.createElement('div');
             modalWindow.className = "modalWindow";
+            modalWindow.classList.add(status ? "Success" : "Error");
             document.body.appendChild(modalWindow);
 
             let modalTitle = document.createElement('p');
             modalTitle.className = "modalTitle";
-            modalTitle.textContent = "Ошибка!";
+            modalTitle.textContent = status ? "Успешно!" : "Ошибка!";
             modalWindow.appendChild(modalTitle);
 
             let modalCloseIcon = document.createElement('img');
@@ -405,7 +434,7 @@ export default {
 
             let modalIcon = document.createElement('img');
             modalIcon.className = "modalIcon";
-            modalIcon.src = "icons/warning.svg";
+            modalIcon.src = status ? "icons/success.svg" : "icons/warning.svg";
             modalContent.appendChild(modalIcon);
 
             let modalMessage = document.createElement('span');
@@ -1129,13 +1158,24 @@ export default {
         font-size: 14px;
 
         color: var(--text-color);
+    }
+
+    .modalWindow.Error {
         background: var(--error-background);
+    }
+
+    .modalWindow.Success {
+        background: var(--success-background);
     }
 
     .modalWindow .modalTitle {
         margin: 5px 10px;
 
         font-size: 18px;
+    }
+
+    .modalWindow span {
+        margin-right: 20px;
     }
 
     .modalWindow .modalCloseIcon {
