@@ -52,9 +52,10 @@
             <div class="ordersList">
                 <div class="order" v-for="order in ordersList" :key="order" @click="selectedOrderId = order.id; getOrderByID();">
                     <div class="header">
-                        <p class="number"> № {{order.id}} </p>
+                        <input class="selectOrderCheckbox" type="checkbox" @click="selectOrder($event);">
                         <p class="usernameTo">{{order.username}} </p>
                         <!-- <p class="date"> {{order.createdAt.slice(0,10).replace(/-/g,".")}} </p> -->
+                        <p class="number"> № {{order.id}} </p>
                     </div>
                     <div class="productsAndStatus">
                         <div class="productsList">
@@ -106,7 +107,7 @@
             <div class="buttons" v-if="productExist == true">
                 <button class="saveButton" type="submit" form="test" v-if="editing == false" @click.prevent="createOrder()"> Сохранить новый заказ </button>
                 <button class="sendButton"   v-if="editing == true"  @click="editOrderByID();"> Обновить </button>
-                <button class="sendButton"   v-if="editing == true && userData.role == 'globaladmin'"  @click="orderChangeStatus();"> Поменять статус </button>
+                <button class="sendButton"   v-if="editing == true && userData.role == 'globaladmin'"  @click="changeOrderStatus();"> Поменять статус </button>
                 <button class="deleteButton" v-if="editing == true"  @click="deleteOrderByID();"> Удалить заказ </button>
                 <select id="selectOrderStatus" class="selectOrderStatus" v-if="editing == true && userData.role == 'globaladmin'">
                     <option>Обрабатывается</option>
@@ -368,7 +369,7 @@ export default {
             }
         },
 
-        async orderChangeStatus() {
+        async changeOrderStatus() {
             if (this.checkValidation()) {
                 let selectedOrderStatus = document.getElementById('selectOrderStatus').value;
                 let linkChangeOrderStatus = '';
@@ -404,6 +405,39 @@ export default {
 
         closeFilterMenu() { // openFilterMenu -> Header.vue
             document.getElementById('filterMenu').style.width = '0px';
+        },
+
+        selectOrder(event) {
+            event.stopPropagation(); // Prevent to call getOrderByID method
+
+            let orders = document.getElementsByClassName("selectOrderCheckbox");
+
+            for (let i = 0; i < orders.length; i++) {
+                let orderCheckbox = orders[i].parentNode.children[0]; 
+                let orderId = Number(orders[i].parentNode.children[2].textContent.substring(3)); 
+
+                if (orderCheckbox.checked) { // is order checkbox is selected? 
+                    if (!(this.userData.selectedOrders.includes(orderId))) { // orderId exist in selected orders already?
+                        this.userData.selectedOrders.push(orderId) // User selected order. Added this order to array
+                    }
+                }
+                else {
+                    if (this.userData.selectedOrders.includes(orderId)) { // Same thing but unselecting order
+                        for (let i = 0; i < this.userData.selectedOrders.length; i++) {
+                            if (this.userData.selectedOrders[i] == orderId) {
+                                this.userData.selectedOrders.splice(i, 1); // We already have this Id. User unselected this order. Deleting from array.
+                            }
+                        }
+                    }
+                }
+            }      
+
+            if (this.userData.selectedOrders.length > 0) { // Show header panel if we selected at least one order
+                document.getElementById("headerOrderButtons").style.display = "block";
+            }
+            else {
+                document.getElementById("headerOrderButtons").style.display = "none";
+            }
         },
 
         showModal(message, status) {  // Status - Warning message or success? Warning - false. Success - true.
@@ -685,9 +719,6 @@ export default {
 
         transition: .3s;
     }
-    .ordersList .order:hover {
-        -webkit-transform: scale(1.1);
-    }
 
     .order .header {
         display: flex;
@@ -704,7 +735,6 @@ export default {
         font-size: 10px;
     }
     .order .header p {
-        padding: 0px 0px 0px 20px;
         margin: auto 0;
 
         height: 20px;
@@ -716,11 +746,15 @@ export default {
         text-overflow: ellipsis;
     }
     .order .header .number {
-        width: 40px;
+        width: 50px;
+    }
+    .order .header input {
+        margin-left: 5px;
+        width: 15px
     }
     .order .header .usernameTo {
-        padding: 0px 0px 0px 10px;
-        width: 200px;
+        padding: 0px 0px 0px 5px;
+        width: 180px;
     }
 
     .order .productsAndStatus {
@@ -890,7 +924,7 @@ export default {
 
         resize: none;
 
-        height: 20px;
+        height: 22px;
 
         border: none;
         border-bottom: 1px solid rgb(150, 150, 150);
@@ -1027,7 +1061,7 @@ export default {
         min-width: 950px;
     }
 
-    .buttons .sendButton {
+    .sendButton {
         all: unset;
 
         margin-left: 30px;
@@ -1048,7 +1082,7 @@ export default {
 
         transition: .3s;
     }
-    .buttons .sendButton:hover {
+    .sendButton:hover {
         color: var(--main-color);
         background: var(--main-background);
     }
@@ -1077,7 +1111,7 @@ export default {
         -webkit-transform: scale(1.1);
     }
 
-    .buttons .deleteButton {
+    .deleteButton {
         all: unset;
 
         margin-left: 30px;
@@ -1098,18 +1132,18 @@ export default {
 
         transition: .3s;
     }
-    .buttons .deleteButton:hover {
+    .deleteButton:hover {
         color: var(--deleteButton-background);
         background: var(--text-color);
     }
 
-    .buttons .selectOrderStatus {
+    .selectOrderStatus {
         margin-left: 30px;
 
-        height: 30px;
+        height: 32px;
         width: 200px;
 
-        border: none;
+        border: 1px solid white;
 
         font-family: var(--main-font);
         font-size: 16px;
@@ -1118,7 +1152,7 @@ export default {
         color: var(--text-color);
         background: var(--sub-color);
     }
-    .buttons .selectOrderStatus:focus {
+    .selectOrderStatus:focus {
         outline: none;
     }
 

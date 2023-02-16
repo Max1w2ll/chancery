@@ -30,10 +30,11 @@ export default {
 
       userData: {
         department: 'department',
-        displayName: 'Фамилия Имя Отчество',
+        displayName: 'FIO',
         email: 'email',
         role: 'role',
         title: 'title',
+        selectedOrders: [],
       },
     }
   },
