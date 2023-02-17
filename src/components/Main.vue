@@ -46,7 +46,7 @@
             <div class="searchSection">
                 <input id="filterSettingSearch" v-on:keyup.enter="getOrders();" placeholder="Введите название заказа" v-model="searchOrdersInput">
                 <div class="searchButton">
-                    <img src="../assets/icons/searchIcon.png" @click="getOrders();">
+                    <img id="searchButtonIcon" src="../assets/icons/searchIcon.png" @click="getOrders();">
                 </div>
             </div>
             <div class="ordersList">

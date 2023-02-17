@@ -42,9 +42,11 @@ export default {
         async deleteOrders() {
             console.log(this.userData.selectedOrders);
             try {
-                await axios.delete('https://auth.fisb/chancery/api/manager/orders/delete-several', { "ids": this.userData.selectedOrders }, { withCredentials: true })
+                await axios.delete('https://auth.fisb/chancery/api/manager/orders/delete-several', { "data": { "ids": this.userData.selectedOrders } }, { withCredentials: true })
                 .then((res) => {
                     console.log(res);
+                    this.userData.selectedOrders = [];
+                    document.getElementById("searchButtonIcon").click();
                 })
             }
             catch (e) {
@@ -100,6 +102,7 @@ export default {
             try {
                 await axios.patch(linkChangeOrderStatus, { "ids": this.userData.selectedOrders }, { withCredentials: true })
                 .then((res) => {
+                    document.getElementById("searchButtonIcon").click();
                     console.log(res);
                 })
             }
