@@ -13,6 +13,7 @@
                 <option>Обработан</option>
                 <option>Выдан</option>
             </select>
+            <button class="sendButton"> Сводный заказ </button>
         </div>
         <div class="userSection">
             <p class="corpPortal" @click="goToPortal()"> Корпоративный портал </p>
@@ -23,9 +24,16 @@
 
 <script>
 import axios from 'axios';  
+import modalWindows from  '@/components/ModalWindows.js';
 
 export default {
     name: 'Header',
+
+    data() {
+        return {
+            modalWindows,
+        }
+    },
 
     props: {
         userData: {
@@ -44,13 +52,13 @@ export default {
             try {
                 await axios.delete('https://auth.fisb/chancery/api/manager/orders/delete-several', { "data": { "ids": this.userData.selectedOrders } }, { withCredentials: true })
                 .then((res) => {
-                    console.log(res);
+                    modalWindows.showModal("Заказы удалены!", true)
                     this.userData.selectedOrders = [];
                     document.getElementById("searchButtonIcon").click();
                 })
             }
             catch (e) {
-                console.log(e.response);
+                modalWindows.showModal(e.response.data.message, false);
             }
         },
 
@@ -103,11 +111,11 @@ export default {
                 await axios.patch(linkChangeOrderStatus, { "ids": this.userData.selectedOrders }, { withCredentials: true })
                 .then((res) => {
                     document.getElementById("searchButtonIcon").click();
-                    console.log(res);
+                    modalWindows.showModal("Статус товаров сменён!", true);
                 })
             }
             catch (e) {
-                console.log(e.response);
+                modalWindows.showModal(e.response.data.message, false);
             }
         },
 
@@ -188,7 +196,7 @@ export default {
     }
 
     .orderButtons button, .orderButtons select {
-        margin: 9px;
+        margin: 8px;
     }
 
     /* Right up corner */

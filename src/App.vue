@@ -12,6 +12,7 @@ import axios from 'axios';
 
 import Header from './components/Header.vue'
 import Main from './components/Main.vue'
+import ModalWindows from '@/components/ModalWindows.js';
 
 export default {
   name: 'App',
@@ -35,6 +36,8 @@ export default {
         role: 'role',
         title: 'title',
         selectedOrders: [],
+
+        ModalWindows,
       },
     }
   },
@@ -62,7 +65,7 @@ export default {
       return matches ? decodeURIComponent(matches[1]) : undefined;
     },
 
-    createAuthWindow(event) {
+    createAuthWindow() {
       let darkLayer = document.createElement('div');
       darkLayer.className = 'darkLayer';
       document.body.appendChild(darkLayer);
@@ -94,6 +97,7 @@ export default {
       usernameSection.appendChild(usernameLabel);
 
       let username = document.createElement('input');
+      username.required = true
       usernameSection.appendChild(username);
 
       let usernameIcon = document.createElement('img');
@@ -112,6 +116,7 @@ export default {
       let password = document.createElement('input');
       password.type = 'password'
       password.className = 'password';
+      password.required = true;
       passwordSection.appendChild(password);
 
       let passwordIcon = document.createElement('img');
@@ -126,22 +131,13 @@ export default {
 
       inputsForm.addEventListener('submit', (event) => {
         event.preventDefault();
-
-        axios.post(this.authLink, 
-        {
-            "username": username.value,
-            "password": password.value
-        },
-        {
-          'Content-Type': 'application/json',
-          withCredentials: true 
-        })
+        axios.post(this.authLink, { "username": username.value, "password": password.value }, { withCredentials: true })
         .then((res) => {
-          console.log(res);
-          location.reload()
+          ModalWindows.showModal(res.data.message, true);
+          setTimeout(() => { location.reload() }, 1000);
         },
-        reason => {
-          console.log(reason);
+        () => {
+          ModalWindows.showModal("Вы ввели неправильную почту или пароль!", false);
         });
       })
     }

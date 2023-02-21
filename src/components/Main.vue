@@ -77,7 +77,7 @@
             <div class="title">
                 <p v-if="editing == false"> Новый товар </p>
                 <p v-if="editing == true"> Номер заказа: {{order.id}} </p>
-                <img class="closeEditorButton" src="icons/close.png" @click="selectedOrderId = undefined; deleteModals();"/>
+                <img class="closeEditorButton" src="icons/close.png" @click="selectedOrderId = undefined; ModalWindows.deleteModals();"/>
             </div>
             <div id="productList" class="productList">
                 <form id="test" class="product" v-for="product in order.positions" :key="product">
@@ -129,6 +129,7 @@
 
 <script>
 import axios from 'axios';  
+import ModalWindows from  '@/components/ModalWindows.js';
 
 export default {
     name: 'Main',
@@ -158,6 +159,8 @@ export default {
             productExist: false,
 
             searchOrdersInput: '',
+
+            ModalWindows
         }
     },
 
@@ -323,13 +326,13 @@ export default {
             if (await this.checkValidation()) {
                 try {
                     await axios.post('https://auth.fisb/chancery/api/employee/orders/all', this.getProducts(), { withCredentials: true })
-                    .then((res) => {
-                        this.showModal("Заказ создан!", true);
+                    .then(() => {
+                        ModalWindows.showModal("Заказ создан!", true);
                         this.getOrders();
                     });
                 }
                 catch (e) {
-                    this.showModal(e.response.data.message, false);
+                    ModalWindows.showModal(e.response.data.message, false);
                 }
             }
         },
@@ -338,14 +341,14 @@ export default {
             if (await this.checkValidation()) {
                 try {
                     await axios.patch(this.getOrderByIdLink+this.selectedOrderId, this.getProducts(), { withCredentials: true })
-                    .then((res) => {
-                        this.showModal("Заказ редактирован!", true);
+                    .then(() => {
+                        ModalWindows.showModal("Заказ редактирован!", true);
                         this.getOrders();
                     })
                 }
                 catch (e) {
                     // console.log(e.response.data.message);
-                    this.showModal(e.response.data.message, false);
+                    ModalWindows.showModal(e.response.data.message, false);
                 }
             }
         },
@@ -358,14 +361,14 @@ export default {
             try {
                 await axios.delete(this.getOrderByIdLink+this.selectedOrderId, { withCredentials: true })
                 .then((res) => {
-                    this.showModal("Заказ удалён!", true);
+                    ModalWindows.showModal("Заказ удалён!", true);
                     this.selectedOrderId = undefined;
                     this.order = res.data;
                     this.getOrders();
                 });
             }
             catch (e) {
-                this.showModal(e.response.data.message, false);
+                ModalWindows.showModal(e.response.data.message, false);
             }
         },
 
@@ -387,14 +390,13 @@ export default {
 
                 try {
                     await axios.patch(linkChangeOrderStatus, { "ids": [ this.selectedOrderId ] }, { withCredentials: true })
-                    .then((res) => {
-                        this.showModal("Статус заказа обновлён!", true);
+                    .then(() => {
+                        ModalWindows.showModal("Статус заказа обновлён!", true);
                         this.getOrders();
                     })
                 }
                 catch (e) {
-                    // console.log(e.response.data.message);
-                    this.showModal(e.response.data.message, false);
+                    ModalWindows.showModal(e.response.data.message, false);
                 }
             }
         },
@@ -437,50 +439,6 @@ export default {
             }
             else {
                 document.getElementById("headerOrderButtons").style.display = "none";
-            }
-        },
-
-        showModal(message, status) {  // Status - Warning message or success? Warning - false. Success - true.
-            this.deleteModals();
-
-            let modalWindow = document.createElement('div');
-            modalWindow.className = "modalWindow";
-            modalWindow.classList.add(status ? "Success" : "Error");
-            document.body.appendChild(modalWindow);
-
-            let modalTitle = document.createElement('p');
-            modalTitle.className = "modalTitle";
-            modalTitle.textContent = status ? "Успешно!" : "Ошибка!";
-            modalWindow.appendChild(modalTitle);
-
-            let modalCloseIcon = document.createElement('img');
-            modalCloseIcon.className = "modalCloseIcon";
-            modalCloseIcon.src = "icons/close.png";
-            modalWindow.appendChild(modalCloseIcon);
-
-            modalCloseIcon.addEventListener("click", () => {
-                modalWindow.remove();
-            })
-
-            let modalContent = document.createElement('div');
-            modalContent.className = "modalContent";
-            modalWindow.appendChild(modalContent);
-
-            let modalIcon = document.createElement('img');
-            modalIcon.className = "modalIcon";
-            modalIcon.src = status ? "icons/success.svg" : "icons/warning.svg";
-            modalContent.appendChild(modalIcon);
-
-            let modalMessage = document.createElement('span');
-            modalTitle.className = "modalTitle";
-            modalMessage.textContent = message;
-            modalContent.appendChild(modalMessage);
-        },
-
-        deleteModals() {
-            let modalWindows = document.querySelectorAll('.modalWindow');
-            for (let i = 0; i < modalWindows.length; i++) {
-                modalWindows[i].remove();
             }
         }
     },
@@ -1072,7 +1030,7 @@ export default {
         border: 1px solid;
 
         font-family: var(--main-font);
-        font-size: 16px;
+        font-size: 15px;
         text-align: center;
 
         color: var(--text-color);
@@ -1122,7 +1080,7 @@ export default {
         border: 1px solid;
 
         font-family: var(--main-font);
-        font-size: 16px;
+        font-size: 15px;
         text-align: center;
 
         color: var(--text-color);
@@ -1138,6 +1096,7 @@ export default {
     }
 
     .selectOrderStatus {
+        transform: translateY(1px);
         margin-left: 30px;
 
         height: 32px;
@@ -1192,6 +1151,8 @@ export default {
         font-size: 14px;
 
         color: var(--text-color);
+
+        z-index: 3;
     }
 
     .modalWindow.Error {
