@@ -1,7 +1,6 @@
 <template>
     <div class="headerSection"> 
         <div class="menuSection">
-            <img class="threeLineIcon" @click="openFilterMenu()" src="../assets/icons/threeLineIcon.png">
             <p class="menuTitle"> Меню </p>
         </div>
         <div id="headerOrderButtons" class="orderButtons">
@@ -13,7 +12,7 @@
                 <option>Обработан</option>
                 <option>Выдан</option>
             </select>
-            <button class="sendButton"> Сводный заказ </button>
+            <button class="sendButton"  @click="bulkOrder()"> Сводный заказ </button>
         </div>
         <div class="userSection">
             <p class="corpPortal" @click="goToPortal()"> Корпоративный портал </p>
@@ -43,10 +42,6 @@ export default {
     },
 
     methods: {
-        openFilterMenu() {
-            document.getElementById('filterMenu').style.width = '300px';
-        },
-
         async deleteOrders() {
             console.log(this.userData.selectedOrders);
             try {
@@ -109,13 +104,41 @@ export default {
 
             try {
                 await axios.patch(linkChangeOrderStatus, { "ids": this.userData.selectedOrders }, { withCredentials: true })
-                .then((res) => {
+                .then(() => {
                     document.getElementById("searchButtonIcon").click();
                     modalWindows.showModal("Статус товаров сменён!", true);
                 })
             }
             catch (e) {
                 modalWindows.showModal(e.response.data.message, false);
+            }
+        },
+
+        async bulkOrder() {
+            try {
+                await axios.patch('https://auth.fisb/chancery/api/manager/orders/np', { "ids": this.userData.selectedOrders }, { withCredentials: true })
+                .then(async () => {
+                    try {
+                        await axios.get('https://auth.fisb/chancery/api/manager/orders/bulk')
+                        .then((res) => {
+                            console.log(res);
+                        })
+                    }
+                    catch (e) {
+                        modalWindows.showModal(e.response.data.message, false);
+                    }
+                })
+            }
+            catch (e) {
+                try {
+                    await axios.get('https://auth.fisb/chancery/api/manager/orders/bulk')
+                    .then((res) => {
+                        console.log(res);
+                    })
+                }
+                catch (e) {
+                    modalWindows.showModal(e.response.data.message, false);
+                }
             }
         },
 
@@ -170,7 +193,7 @@ export default {
     }
 
     .menuSection .menuTitle {
-        margin: 15px 5px auto 5px;
+        margin: 15px 5px auto 30px;
 
         height: 25px;
 

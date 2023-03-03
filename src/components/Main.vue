@@ -2,10 +2,6 @@
     <div class="mainSection">
         <!-- Filter menu -->
         <div id="filterMenu" class="filterMenu">
-            <div class="header">
-                <img class="leftArrow" @click="closeFilterMenu()" src="../assets/icons/leftArrow.png">
-                <p id="menuTitle" class="menuTitle"> Меню </p>
-            </div>
             <p class="filterTitle"> Фильтры поиска: </p>
             <div class="filterSettings"> 
                 <div>
@@ -38,7 +34,7 @@
                         <option> Сначала старые </option>
                     </select>
                 </div>
-                <button class="filterSearch" @click="closeFilterMenu(); getOrders();"> Поиск </button>
+                <button class="filterSearch" @click="getOrders();"> Поиск </button>
             </div>
         </div>
         <!-- Left side -->
@@ -280,6 +276,7 @@ export default {
                 axios.get(this.getOrdersLink+'?'+status+dateForm+sortBy+search, { withCredentials: true })
                 .then((res) => {
                     this.ordersList = res.data.data;
+                    document.getElementById("headerOrderButtons").style.display = "none";
                 });
             }, 500);
         },
@@ -326,8 +323,10 @@ export default {
             if (await this.checkValidation()) {
                 try {
                     await axios.post('https://auth.fisb/chancery/api/employee/orders/all', this.getProducts(), { withCredentials: true })
-                    .then(() => {
+                    .then((res) => {
+                        console.log(res);
                         ModalWindows.showModal("Заказ создан!", true);
+                        this.selectedOrderId = undefined;
                         this.getOrders();
                     });
                 }
@@ -405,10 +404,6 @@ export default {
         //    Other stuff    //
         //-------------------//
 
-        closeFilterMenu() { // openFilterMenu -> Header.vue
-            document.getElementById('filterMenu').style.width = '0px';
-        },
-
         selectOrder(event) {
             event.stopPropagation(); // Prevent to call getOrderByID method
 
@@ -480,10 +475,9 @@ export default {
         left: 0;
 
         z-index: 1;
-        position: absolute;
 
         height: 100%;
-        width: 0;
+        min-width: 300px;
         
         background-color: var(--main-color);
         overflow-x: hidden;
@@ -583,6 +577,15 @@ export default {
     .filterSettings select {
         height: 30px;
         font-family: var(--main-font);
+    }
+
+    .menuOrderButtons {
+        padding-top: 10px;
+
+        display: grid;
+
+        font-family: var(--main-font);
+        color: var(--text-color);
     }
 
     /*-----------*/
@@ -1137,22 +1140,54 @@ export default {
     /*-------*/
 
     .modalWindow {
-        right: 110px;
-        top: 70px;
+        right: 16px;
+        top: 16px;
 
-        padding-bottom: 10px;
+        padding: 8px;
 
+        display: flex;
+        align-items: center;
+        justify-content: center;
         position: absolute;
 
-        height: fit-content;
-        width: 340px;
+        min-height: 48px;
+        width: 384px;
 
+        font-size: 17px;
         font-family: var(--main-font);
-        font-size: 14px;
 
         color: var(--text-color);
+        opacity: 1;
 
-        z-index: 3;
+        z-index: 2000;
+
+        animation-duration: 0.3s;
+        animation-name: modalOpen
+    }
+    @keyframes modalOpen {
+        from {
+            opacity: 0;
+            transform: translateY(100%);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0%);
+        }
+    }
+
+    .modalWindow.remove {
+        opacity: 0;
+        animation-name: modalClose
+    }
+    @keyframes modalClose {
+        from {
+            opacity: 1;
+            transform: translateY(0%);
+        }
+        to {
+            opacity: 0;
+            transform: translateY(100%);
+        }
     }
 
     .modalWindow.Error {
@@ -1161,49 +1196,6 @@ export default {
 
     .modalWindow.Success {
         background: var(--success-background);
-    }
-
-    .modalWindow .modalTitle {
-        margin: 5px 10px;
-
-        font-size: 18px;
-    }
-
-    .modalWindow span {
-        margin-right: 20px;
-    }
-
-    .modalWindow .modalCloseIcon {
-        top: 5px;
-        right: 5px;
-
-        position: absolute;
-
-        height: 24px;
-        width: 24px;
-
-        cursor: pointer;
-
-        filter: brightness(0) invert(1);
-
-        transition: 0.3s;
-    }
-
-    .modalWindow .modalContent {
-        display: flex;
-        align-items: center;
-
-        height: auto;
-        width: auto;
-    }
-
-    .modalWindow .modalContent .modalIcon {
-        margin: 3px 20px 5px 20px;
-
-        height: 46px;
-        min-width: 46px;
-
-        filter: invert(1);
     }
 
 </style>
