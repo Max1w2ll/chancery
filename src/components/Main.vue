@@ -35,6 +35,17 @@
                     </select>
                 </div>
                 <button class="filterSearch" @click="getOrders();"> Поиск </button>
+                <div id="headerOrderButtons" class="orderButtons">
+                    <button class="deleteButton" @click="deleteOrders()"> Удалить </button>
+                    <button class="sendButton"   @click="selectAllOrders()"> Выбрать всё </button>
+                    <button class="sendButton"   @click="ordersChangeStatus()" v-if="userData.role == 'globaladmin'"> Поменять статус </button>
+                    <select id="headerSelectOrderStatus" class="selectOrderStatus" v-if="userData.role == 'globaladmin'">
+                        <option>Обрабатывается</option>
+                        <option>Обработан</option>
+                        <option>Выдан</option>
+                    </select>
+                    <button class="sendButton"  @click="bulkOrder()"> Сводный заказ </button>
+                </div>
             </div>
         </div>
         <!-- Left side -->
@@ -68,7 +79,7 @@
             </div>
         </div>
 
-        <!-- Center, right side -->
+        <!-- Right side -->
         <div class="editor" v-if="selectedOrderId != undefined">
             <div class="title">
                 <p v-if="editing == false"> Новый товар </p>
@@ -112,7 +123,35 @@
                 </select>
             </div>
         </div>
-        <div class="nothingSelected" v-if="selectedOrderId == undefined">
+        
+        <div class="bulkOrder" v-if="selectedOrderId == undefined && bulk == true">
+            <div class="title">
+                <p> Сводный заказ </p>
+                <img class="closeEditorButton" src="icons/close.png" @click="bulk = false;"/>
+            </div>
+            <div class="content">
+                <table>
+                    <tr>
+                        <th> № п/п </th>
+                        <th> Номенклатура </th>
+                        <th> Количество </th>
+                        <th> Ссылка на товар </th>
+                        <th> Кому требуется (Фамилия и подразделение) </th>
+                        <th> Обоснование (комментарии) </th>
+                    </tr>
+                    <tr>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th> 
+                    </tr>
+                </table>
+            </div>
+        </div> 
+
+        <div class="nothingSelected" v-if="selectedOrderId == undefined && bulk == false">
             <div class="textAndImage">
                 <img src="../assets/icons/nothingSelected.png" width="64" height="64">
                 <p> Заказ не выбран! </p>
@@ -152,6 +191,7 @@ export default {
             order: [{}],
 
             editing: true, // editing EXISTING order. Not new.
+            bulk: false, // If we select bulk order option
             productExist: false,
 
             searchOrdersInput: '',
@@ -371,6 +411,21 @@ export default {
             }
         },
 
+        async deleteOrders() {
+            console.log(this.userData.selectedOrders);
+            try {
+                await axios.delete('https://auth.fisb/chancery/api/manager/orders/delete-several', { "data": { "ids": this.userData.selectedOrders } }, { withCredentials: true })
+                .then(() => {
+                    ModalWindows.showModal("Заказы удалены!", true)
+                    this.userData.selectedOrders = [];
+                    this.getOrders();
+                })
+            }
+            catch (e) {
+                ModalWindows.showModal(e.response.data.message, false);
+            }
+        },
+
         async changeOrderStatus() {
             if (this.checkValidation()) {
                 let selectedOrderStatus = document.getElementById('selectOrderStatus').value;
@@ -396,6 +451,62 @@ export default {
                 }
                 catch (e) {
                     ModalWindows.showModal(e.response.data.message, false);
+                }
+            }
+        },
+
+        async ordersChangeStatus() {
+            let selectedOrderStatus = document.getElementById('headerSelectOrderStatus').value;
+            let linkChangeOrderStatus = '';
+            switch (selectedOrderStatus) {
+                case "Обрабатывается":
+                    linkChangeOrderStatus = 'https://auth.fisb/chancery/api/manager/orders/np';
+                    break;
+                case "Обработан":
+                    linkChangeOrderStatus = 'https://auth.fisb/chancery/api/manager/orders/ip';
+                    break;
+                case "Выдан":
+                    linkChangeOrderStatus = 'https://auth.fisb/chancery/api/manager/orders/p';
+                    break;
+            }
+
+            try {
+                await axios.patch(linkChangeOrderStatus, { "ids": this.userData.selectedOrders }, { withCredentials: true })
+                .then(() => {
+                    document.getElementById("searchButtonIcon").click();
+                    ModalWindows.showModal("Статус товаров сменён!", true);
+                })
+            }
+            catch (e) {
+                ModalWindows.showModal(e.response.data.message, false);
+            }
+        },
+
+        async bulkOrder() {
+            try {
+                this.bulk = true;
+                await axios.patch('https://auth.fisb/chancery/api/manager/orders/np', { "ids": this.userData.selectedOrders }, { withCredentials: true })
+                .then(async () => {
+                    try {
+                        await axios.get('https://auth.fisb/chancery/api/manager/orders/bulk')
+                        .then((res) => {
+                            console.log(res);
+                        })
+                    }
+                    catch (e) {
+                        modalWindows.showModal(e.response.data.message, false);
+                    }
+                })
+            }
+            catch (e) {
+                try {
+                    await axios.get('https://auth.fisb/chancery/api/manager/orders/bulk')
+                    .then((res) => {
+                        console.log(res);
+                    })
+                }
+                catch (e) {
+                    modalWindows.showModal(e.response.data.message, false);
                 }
             }
         },
@@ -430,12 +541,42 @@ export default {
             }      
 
             if (this.userData.selectedOrders.length > 0) { // Show header panel if we selected at least one order
-                document.getElementById("headerOrderButtons").style.display = "block";
+                document.getElementById("headerOrderButtons").style.display = "grid";
             }
             else {
                 document.getElementById("headerOrderButtons").style.display = "none";
             }
-        }
+        },
+
+        selectAllOrders() {
+            let orders = document.getElementsByClassName("selectOrderCheckbox");
+            let allSelected = true;
+
+            for (let i = 0; i < orders.length; i++) {
+                if(!(orders[i].checked)) { // At least one order not selected?
+                    allSelected = false;
+                    break;
+                }   
+            }
+
+            this.userData.selectedOrders = [];
+
+            for (let i = 0; i < orders.length; i++) {
+                let orderId = Number(orders[i].parentNode.children[2].textContent.substring(3));
+
+                orders[i].checked = allSelected ? false : true; // If all orders already been selected we unselect them. Otherwise we select them
+                if (!allSelected) {
+                    this.userData.selectedOrders.push(orderId);
+                }
+            }
+
+            if (this.userData.selectedOrders.length > 0) { // Show header panel if we selected at least one order
+                document.getElementById("headerOrderButtons").style.display = "grid";
+            }
+            else {
+                document.getElementById("headerOrderButtons").style.display = "none";
+            }
+        },
     },
 
     mounted() {
@@ -579,13 +720,16 @@ export default {
         font-family: var(--main-font);
     }
 
-    .menuOrderButtons {
+    .orderButtons {
         padding-top: 10px;
 
-        display: grid;
+        justify-content: center;
 
-        font-family: var(--main-font);
-        color: var(--text-color);
+        display: none;
+    }
+
+    .orderButtons button, .orderButtons select {
+        margin: 8px;
     }
 
     /*-----------*/
@@ -791,7 +935,7 @@ export default {
     /* Center, right side */
     /*--------------------*/
 
-    .mainSection .editor {
+    .mainSection .editor, .mainSection .bulkOrder {
         overflow-y: scroll;
         overflow-x: hidden;
 
@@ -810,12 +954,17 @@ export default {
         background-color: var(--left-side-scrollbar-thumb);
     }
 
-    .editor .title {
+    .mainSection .bulkOrder .content {
+        justify-content: center;
+        display : flex;
+    }
+
+    .editor .title, .bulkOrder .title {
         display: flex;
 
         color: var(--main-color);
     }
-    .editor .title .closeEditorButton {
+    .editor .title .closeEditorButton, .bulkOrder .title .closeEditorButton {
         margin-top: 20px;
         right: 30px;
 
@@ -830,11 +979,31 @@ export default {
 
         transition: 0.3s;
     }
-    .editor .title p {
+    .editor .title p, .bulkOrder .title p {
         margin: 30px;
 
         font-family: var(--main-font);
         font-size: 24px;
+
+        color: var(--main-color);
+    }
+
+    .bulkOrder .content table {
+        width: 1200px;
+
+        font-family: var(--main-font);
+
+        color: var(--main-color);
+    }
+
+    .bulkOrder .content tr {
+        height: 30px;
+    }
+
+    .bulkOrder .content th {
+        background-color: #fff;
+
+        border: 1px solid rgba(39,103,201,.2);
     }
 
     .editor .productList {

@@ -3,17 +3,6 @@
         <div class="menuSection">
             <p class="menuTitle"> Меню </p>
         </div>
-        <div id="headerOrderButtons" class="orderButtons">
-            <button class="deleteButton" @click="deleteOrders()" style="width: 100px;"> Удалить </button>
-            <button class="sendButton"   @click="selectAllOrders()"> Выбрать всё </button>
-            <button class="sendButton"   @click="ordersChangeStatus()" v-if="userData.role == 'globaladmin'"> Поменять статус </button>
-            <select id="headerSelectOrderStatus" class="selectOrderStatus" v-if="userData.role == 'globaladmin'">
-                <option>Обрабатывается</option>
-                <option>Обработан</option>
-                <option>Выдан</option>
-            </select>
-            <button class="sendButton"  @click="bulkOrder()"> Сводный заказ </button>
-        </div>
         <div class="userSection">
             <p class="corpPortal" @click="goToPortal()"> Корпоративный портал </p>
             <p class="logOut" @click="logOut()"> Выйти </p>
@@ -42,106 +31,6 @@ export default {
     },
 
     methods: {
-        async deleteOrders() {
-            console.log(this.userData.selectedOrders);
-            try {
-                await axios.delete('https://auth.fisb/chancery/api/manager/orders/delete-several', { "data": { "ids": this.userData.selectedOrders } }, { withCredentials: true })
-                .then((res) => {
-                    modalWindows.showModal("Заказы удалены!", true)
-                    this.userData.selectedOrders = [];
-                    document.getElementById("searchButtonIcon").click();
-                })
-            }
-            catch (e) {
-                modalWindows.showModal(e.response.data.message, false);
-            }
-        },
-
-        selectAllOrders() {
-            let orders = document.getElementsByClassName("selectOrderCheckbox");
-            let allSelected = true;
-
-            for (let i = 0; i < orders.length; i++) {
-                if(!(orders[i].checked)) { // At least one order not selected?
-                    allSelected = false;
-                    break;
-                }   
-            }
-
-            this.userData.selectedOrders = [];
-
-            for (let i = 0; i < orders.length; i++) {
-                let orderId = Number(orders[i].parentNode.children[2].textContent.substring(3));
-
-                orders[i].checked = allSelected ? false : true; // If all orders already been selected we unselect them. Otherwise we select them
-                if (!allSelected) {
-                    this.userData.selectedOrders.push(orderId);
-                }
-            }
-
-            if (this.userData.selectedOrders.length > 0) { // Show header panel if we selected at least one order
-                document.getElementById("headerOrderButtons").style.display = "block";
-            }
-            else {
-                document.getElementById("headerOrderButtons").style.display = "none";
-            }
-        },
-
-        async ordersChangeStatus() {
-            let selectedOrderStatus = document.getElementById('headerSelectOrderStatus').value;
-            let linkChangeOrderStatus = '';
-            switch (selectedOrderStatus) {
-                case "Обрабатывается":
-                    linkChangeOrderStatus = 'https://auth.fisb/chancery/api/manager/orders/np';
-                    break;
-                case "Обработан":
-                    linkChangeOrderStatus = 'https://auth.fisb/chancery/api/manager/orders/ip';
-                    break;
-                case "Выдан":
-                    linkChangeOrderStatus = 'https://auth.fisb/chancery/api/manager/orders/p';
-                    break;
-            }
-
-            try {
-                await axios.patch(linkChangeOrderStatus, { "ids": this.userData.selectedOrders }, { withCredentials: true })
-                .then(() => {
-                    document.getElementById("searchButtonIcon").click();
-                    modalWindows.showModal("Статус товаров сменён!", true);
-                })
-            }
-            catch (e) {
-                modalWindows.showModal(e.response.data.message, false);
-            }
-        },
-
-        async bulkOrder() {
-            try {
-                await axios.patch('https://auth.fisb/chancery/api/manager/orders/np', { "ids": this.userData.selectedOrders }, { withCredentials: true })
-                .then(async () => {
-                    try {
-                        await axios.get('https://auth.fisb/chancery/api/manager/orders/bulk')
-                        .then((res) => {
-                            console.log(res);
-                        })
-                    }
-                    catch (e) {
-                        modalWindows.showModal(e.response.data.message, false);
-                    }
-                })
-            }
-            catch (e) {
-                try {
-                    await axios.get('https://auth.fisb/chancery/api/manager/orders/bulk')
-                    .then((res) => {
-                        console.log(res);
-                    })
-                }
-                catch (e) {
-                    modalWindows.showModal(e.response.data.message, false);
-                }
-            }
-        },
-
         goToPortal() {
             location.href = "https://auth.fisb/";
         },
@@ -212,14 +101,6 @@ export default {
         font-size: 18px;
 
         color: var(--text-color);
-    }
-
-    .headerSection .orderButtons {
-        display: none;
-    }
-
-    .orderButtons button, .orderButtons select {
-        margin: 8px;
     }
 
     /* Right up corner */
