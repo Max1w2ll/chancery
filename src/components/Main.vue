@@ -87,7 +87,7 @@
                 <img class="closeEditorButton" src="icons/close.png" @click="selectedOrderId = undefined; ModalWindows.deleteModals();"/>
             </div>
             <div id="productList" class="productList">
-                <form id="test" class="product" v-for="product in order.positions" :key="product">
+                <form class="product" v-for="product in order.positions" :key="product">
                     <input class="name" required minlength="4" maxlength="256" placeholder="Название товара" v-model="product.name">
                     <img class="deleteProduct" src="icons/close.png" @click="deleteProduct($event);"/>
                     <div class="productInfo">
@@ -112,7 +112,7 @@
             <p id="createdAt" class="extendedInfo" v-if="productExist == true && userData.role == 'globaladmin' && editing == true"> Создано в {{order.createdAt}} </p>
             <p id="updatedAt" class="extendedInfo" v-if="productExist == true && userData.role == 'globaladmin' && editing == true"> Последние обновление в {{order.updatedAt}} </p>
             <div class="buttons" v-if="productExist == true">
-                <button class="saveButton" type="submit" form="test" v-if="editing == false" @click.prevent="createOrder()"> Сохранить новый заказ </button>
+                <button class="saveButton" type="submit" v-if="editing == false" @click.prevent="createOrder()"> Сохранить новый заказ </button>
                 <button class="sendButton"   v-if="editing == true"  @click="editOrderByID();"> Обновить </button>
                 <button class="sendButton"   v-if="editing == true && userData.role == 'globaladmin'"  @click="changeOrderStatus();"> Поменять статус </button>
                 <button class="deleteButton" v-if="editing == true"  @click="deleteOrderByID();"> Удалить заказ </button>
@@ -130,22 +130,24 @@
                 <img class="closeEditorButton" src="icons/close.png" @click="bulk = false;"/>
             </div>
             <div class="content">
-                <table>
+                <table class="bulkTableHeader">
                     <tr>
-                        <th> № п/п </th>
-                        <th> Номенклатура </th>
-                        <th> Количество </th>
-                        <th> Ссылка на товар </th>
-                        <th> Кому требуется (Фамилия и подразделение) </th>
-                        <th> Обоснование (комментарии) </th>
+                        <td class="id"> <b> № п/п </b> </td>
+                        <td class="name"> <b> Номенклатура </b> </td>
+                        <td class="count"> <b> Кол-во </b> </td>
+                        <td class="link"> <b> Ссылка на товар </b> </td>
+                        <td class="usernameTo"> <b> Кому требуется </b> </td>
+                        <td class="description"> <b> Обоснование (комментарии) </b> </td>
                     </tr>
-                    <tr>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th> 
+                </table>
+                <table v-for="bulkOrders in bulkOrders.orders" :key="bulkOrders">
+                    <tr v-for="product in bulkOrders.positions" :key="product">
+                        <td class="id"> {{bulkOrders.id}} </td>
+                        <td class="name"> {{product.name}} </td>
+                        <td class="count"> {{product.count}} </td>
+                        <td class="link"> {{product.link}} </td>
+                        <td class="usernameTo"> {{bulkOrders.usernameTo}} </td>
+                        <td class="description"> {{product.description}} </td>
                     </tr>
                 </table>
             </div>
@@ -189,6 +191,7 @@ export default {
 
             selectedOrderId: undefined,
             order: [{}],
+            bulkOrders: [{}],
 
             editing: true, // editing EXISTING order. Not new.
             bulk: false, // If we select bulk order option
@@ -483,14 +486,16 @@ export default {
         },
 
         async bulkOrder() {
+            this.selectedOrderId = undefined;
+            this.bulk = true;
             try {
-                this.bulk = true;
                 await axios.patch('https://auth.fisb/chancery/api/manager/orders/np', { "ids": this.userData.selectedOrders }, { withCredentials: true })
                 .then(async () => {
                     try {
                         await axios.get('https://auth.fisb/chancery/api/manager/orders/bulk')
                         .then((res) => {
-                            console.log(res);
+                            this.bulkOrders = res.data;
+                            console.log(res.data);
                         })
                     }
                     catch (e) {
@@ -502,7 +507,8 @@ export default {
                 try {
                     await axios.get('https://auth.fisb/chancery/api/manager/orders/bulk')
                     .then((res) => {
-                        console.log(res);
+                        this.bulkOrders = res.data;
+                        console.log(res.data);
                     })
                 }
                 catch (e) {
@@ -956,7 +962,11 @@ export default {
 
     .mainSection .bulkOrder .content {
         justify-content: center;
-        display : flex;
+        display: grid;
+
+        font-family: var(--main-font);
+
+        color: var(--main-color);
     }
 
     .editor .title, .bulkOrder .title {
@@ -989,21 +999,42 @@ export default {
     }
 
     .bulkOrder .content table {
-        width: 1200px;
-
-        font-family: var(--main-font);
-
-        color: var(--main-color);
-    }
-
-    .bulkOrder .content tr {
-        height: 30px;
-    }
-
-    .bulkOrder .content th {
         background-color: #fff;
+    }
 
-        border: 1px solid rgba(39,103,201,.2);
+    .bulkOrder .content .bulkTableHeader {
+        border-bottom: 2px solid;
+    }
+
+    .bulkOrder .content td {
+        height: 40px;
+
+        text-align: center;
+    }
+
+    .bulkOrder .content .id, .bulkOrder .content .count {
+        width: 60px;
+        max-width: 60px;
+    }
+
+    .bulkOrder .content .name {
+        width: 200px;
+        max-width: 200px;
+    }
+
+    .bulkOrder .content .link {
+        width: 250px;
+        max-width: 250px;
+    }
+
+    .bulkOrder .content .usernameTo {
+        width: 200px;
+        max-width: 200px;
+    }
+
+    .bulkOrder .content .description {
+        max-width: 300px;
+        width: 300px;
     }
 
     .editor .productList {
