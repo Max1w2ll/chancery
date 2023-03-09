@@ -34,17 +34,22 @@
                         <option> Сначала старые </option>
                     </select>
                 </div>
-                <button class="filterSearch" @click="getOrders();"> Поиск </button>
+                <div class="buttons">
+                    <button class="filterSearch" @click="getOrders();"> Поиск </button>
+                    <button style="margin-top: 20px;" class="filterSearch"  @click="bulkOrder()"> Сводный заказ </button>
+                </div>
                 <div id="headerOrderButtons" class="orderButtons">
-                    <button class="deleteButton" @click="deleteOrders()"> Удалить </button>
-                    <button class="sendButton"   @click="selectAllOrders()"> Выбрать всё </button>
-                    <button class="sendButton"   @click="ordersChangeStatus()" v-if="userData.role == 'globaladmin'"> Поменять статус </button>
-                    <select id="headerSelectOrderStatus" class="selectOrderStatus" v-if="userData.role == 'globaladmin'">
-                        <option>Обрабатывается</option>
-                        <option>Обработан</option>
-                        <option>Выдан</option>
-                    </select>
-                    <button class="sendButton"  @click="bulkOrder()"> Сводный заказ </button>
+                    <p style="padding-left: 0px;" class="filterTitle"> Выбранные заказы: </p>
+                    <div class="selectedOrdersButtons">
+                        <button class="deleteButton" @click="deleteOrders()"> Удалить </button>
+                        <button class="sendButton"   @click="selectAllOrders()"> Выбрать всё </button>
+                        <button class="sendButton"   @click="ordersChangeStatus()" v-if="userData.role == 'globaladmin'"> Поменять статус </button>
+                        <select id="headerSelectOrderStatus" class="selectOrderStatus" v-if="userData.role == 'globaladmin'">
+                            <option>Обрабатывается</option>
+                            <option>Обработан</option>
+                            <option>Выдан</option>
+                        </select>
+                    </div>
                 </div>
             </div>
         </div>
@@ -151,6 +156,25 @@
                     </tr>
                 </table>
             </div>
+            <div class="title">
+                <p> Товары вместе </p>
+            </div>
+            <div class="content">
+                <table class="bulkTableHeader">
+                    <td class="articleSummary"> <b> Артикль </b> </td>
+                    <td class="linkSummary"> <b> Ссылка на товар </b> </td>
+                    <td class="countSummary">  <b> Суммарное кол-во </b> </td>
+                </table>
+                <table v-for="bulkOrders in bulkOrders.bulk" :key="bulkOrders">
+                    <tr>
+                        <td class="articleSummary"> {{ bulkOrders.article }} </td>
+                        <td class="linkSummary"> {{ bulkOrders.link }} </td>
+                        <td class="countSummary"> {{ bulkOrders.count }}</td>
+                    </tr>
+                </table>
+            </div>
+
+            <button class="loadBulk"> Загрузить </button>
         </div> 
 
         <div class="nothingSelected" v-if="selectedOrderId == undefined && bulk == false">
@@ -625,6 +649,8 @@ export default {
 
         height: 100%;
         min-width: 300px;
+        width: 300px;
+        max-width: 300px;
         
         background-color: var(--main-color);
         overflow-x: hidden;
@@ -679,7 +705,7 @@ export default {
         padding: 5px;
 
         height: 30px;
-        width: -webkit-fill-available;
+        width: 230px;
 
         text-align: center;
         font-family: var(--main-font);
@@ -717,8 +743,16 @@ export default {
         background: var(--main-color);
     }
 
+    .filterMenu input::-webkit-calendar-picker-indicator {
+        filter: invert(1);
+    }
+
     .filterSettings div {
         margin-bottom: 25px;
+    }
+
+    .filterSettings p {
+        margin-bottom: 5px;
     }
 
     .filterSettings select {
@@ -726,16 +760,27 @@ export default {
         font-family: var(--main-font);
     }
 
+    .filterSettings .buttons {
+        margin-bottom: 10px;
+        padding-bottom: 0px;
+
+        display: grid;
+    }
+
     .orderButtons {
-        padding-top: 10px;
-
-        justify-content: center;
-
         display: none;
     }
 
     .orderButtons button, .orderButtons select {
         margin: 8px;
+    }
+
+    .selectedOrdersButtons {
+        padding-top: 5px;
+
+        display: grid;
+
+        justify-content: center;
     }
 
     /*-----------*/
@@ -765,7 +810,7 @@ export default {
 
         margin: 10px;
 
-        width: 240px;
+        width: -webkit-fill-available;;
         height: 20px;
 
         border-bottom: 1px solid var(--main-color);
@@ -783,7 +828,9 @@ export default {
     .searchSection .searchButton {
         margin-top: 12px;
     }
-    .searchSection .searchButton img { 
+    .searchSection .searchButton img {
+        transform: translateX(-5px);
+        
         height: 20px;
         width: 20px;
 
@@ -814,7 +861,7 @@ export default {
     }
 
     .ordersList .order {
-        margin: 30px auto;
+        margin: 16px 8px 16px 8px;
 
         height: 100px;
         width: 270px;
@@ -1009,12 +1056,18 @@ export default {
     .bulkOrder .content td {
         height: 40px;
 
+        vertical-align: middle;
         text-align: center;
     }
 
     .bulkOrder .content .id, .bulkOrder .content .count {
         width: 60px;
         max-width: 60px;
+    }
+
+    .bulkOrder .content .countSummary {
+        width: 200px;
+        max-width: 200px;
     }
 
     .bulkOrder .content .name {
@@ -1027,6 +1080,16 @@ export default {
         max-width: 250px;
     }
 
+    .bulkOrder .content .articleSummary {
+        width: 120px;
+        max-width: 120px;
+    }
+
+    .bulkOrder .content .linkSummary {
+        width: 750px;
+        max-width: 750px;
+    }
+
     .bulkOrder .content .usernameTo {
         width: 200px;
         max-width: 200px;
@@ -1035,6 +1098,34 @@ export default {
     .bulkOrder .content .description {
         max-width: 300px;
         width: 300px;
+    }
+
+    .bulkOrder .loadBulk {
+        all: unset;
+
+        margin-top: 30px;
+        margin-left: 30px;
+
+        height: 30px;
+        width: 200px;
+
+        border: 1px solid;
+
+        font-family: var(--main-font);
+        font-size: 15px;
+
+        text-align: center;
+
+        color: var(--text-color);
+        background: var(--sub-color);
+
+        cursor: pointer;
+
+        transition: .3s;
+    }
+    .bulkOrder .loadBulk:hover {
+        color: var(--main-color);
+        background: var(--main-background);
     }
 
     .editor .productList {

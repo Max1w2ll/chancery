@@ -5,13 +5,12 @@
         </div>
         <div class="userSection">
             <p class="corpPortal" @click="goToPortal()"> Корпоративный портал </p>
-            <p class="logOut" @click="logOut()"> Выйти </p>
         </div>
     </div>
 </template>
 
 <script>
-import axios from 'axios';  
+// import axios from 'axios';  
 import modalWindows from  '@/components/ModalWindows.js';
 
 export default {
@@ -34,14 +33,6 @@ export default {
         goToPortal() {
             location.href = "https://auth.fisb/";
         },
-
-        logOut() {
-            axios.get('https://auth.fisb/auth/api/logout')
-            .then((res) => {
-                console.log(res);
-                location.reload();
-            });
-        }
     },
 }
 
@@ -108,28 +99,26 @@ export default {
         right: 0;
 
         position: absolute;
+        justify-content: center;
 
         display: flex;
 
         height: 50px;
-        width: 400px;
+        width: fit-content;
 
         background: var(--sub-color);
     }
-
-    .userSection .username {
-        margin: auto 10px auto 10px;
-
-        font-family: var(--main-font);
-        font-size: 16px;
-
-        color: var(--text-color);
-    }
     
     .userSection p {
-        margin: 12.5px 10px 12.5px 10px;
+        margin: 0;
+        padding-right: 30px;
+        padding-left: 30px;
 
-        position: absolute;
+        height: 100%;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
 
         font-family: var(--main-font);
         font-size: 18px;
@@ -137,14 +126,11 @@ export default {
         color: var(--text-color);
 
         cursor: pointer;
-    }
-    .userSection .corpPortal {
-        right: 90px;
-    }
-    .userSection .logOut {
-        right: 10px;
+
+        transition: all .3s ease-in-out;
     }
     .userSection p:hover {
-        color: var(--text-color-hover);
+        background: var(--text-color);
+        color: var(--main-color);
     }
 </style>
