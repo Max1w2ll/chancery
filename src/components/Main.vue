@@ -66,7 +66,6 @@
                     <div class="header">
                         <input class="selectOrderCheckbox" type="checkbox" @click="selectOrder($event);">
                         <p class="usernameTo">{{order.username}} </p>
-                        <!-- <p class="date"> {{order.createdAt.slice(0,10).replace(/-/g,".")}} </p> -->
                         <p class="number"> № {{order.id}} </p>
                     </div>
                     <div class="productsAndStatus">
@@ -173,8 +172,7 @@
                     </tr>
                 </table>
             </div>
-
-            <button class="loadBulk"> Загрузить </button>
+            <button @click="loadBulk(); loadOrders()" class="loadBulk"> Загрузить </button>
         </div> 
 
         <div class="nothingSelected" v-if="selectedOrderId == undefined && bulk == false">
@@ -540,6 +538,59 @@ export default {
                 }
             }
         },
+
+        loadOrders() {
+            const header = ["№ п/п","Номенклатура", "Кол-во", "Ссылка на товар", "Кому требуется", "Обоснование (комментарии)"]
+
+            var main = [];
+            for (var i = 0; i < this.bulkOrders.orders.length; i++) {
+                for (var j = 0; j < this.bulkOrders.orders[i].positions.length; j++) {
+                    main.push({
+                        "id": this.bulkOrders.orders[i].id, 
+                        "name": this.bulkOrders.orders[i].positions[j].name,
+                        "count": this.bulkOrders.orders[i].positions[j].count,
+                        "link": this.bulkOrders.orders[i].positions[j].link,
+                        "usernameTo": this.bulkOrders.orders[i].usernameTo,
+                        "description": this.bulkOrders.orders[i].positions[j].description
+                    })
+                }
+            }
+
+            main = main.map((item) => {
+                return Object.values(item).toString();
+            })
+
+            this.startCVSDownload(header, main, false);
+        },
+
+        loadBulk() {
+            const header = ["Артикль","Суммарное количество","Ссылка на товар"]
+
+            const main = this.bulkOrders.bulk.map((item) => {
+                return Object.values(item).toString();
+            })
+
+            this.startCVSDownload(header, main, true);
+        },
+
+        startCVSDownload(header, main, isBulk) {
+            const cvs = [header, ...main].join('\n');
+            const blob = new Blob([cvs], { type: 'application/csv'} );
+
+            const url = URL.createObjectURL(blob);
+
+            let a = document.createElement('a');
+            a.download = isBulk ? 'Товары вместе.cvs' : "Сводный заказ.cvs";
+            a.href = url
+            a.style.display = 'none';
+
+            document.body.appendChild(a);
+
+            a.click();
+            a.remove()
+            URL.revokeObjectURL(url);
+        },
+
 
         //-------------------//
         //    Other stuff    //
