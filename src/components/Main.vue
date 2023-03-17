@@ -172,7 +172,7 @@
                     </tr>
                 </table>
             </div>
-            <button @click="loadBulk(); loadOrders()" class="loadBulk"> Загрузить </button>
+            <button @click="loadBulk();" class="loadBulk"> Загрузить </button>
         </div> 
 
         <div class="nothingSelected" v-if="selectedOrderId == undefined && bulk == false">
@@ -188,6 +188,7 @@
 
 <script>
 import axios from 'axios';  
+import XLSX from 'xlsx-js-style'
 import ModalWindows from  '@/components/ModalWindows.js';
 
 export default {
@@ -539,58 +540,36 @@ export default {
             }
         },
 
-        loadOrders() {
-            const header = ["№ п/п","Номенклатура", "Кол-во", "Ссылка на товар", "Кому требуется", "Обоснование (комментарии)"]
+        async loadBulk() {
+            // Flatten objects
+            const rows = this.bulkOrders.bulk.map(row => ({
+                article: row.article,
+                count: row.count,
+                link: row.link,
+            }));
 
-            var main = [];
-            for (var i = 0; i < this.bulkOrders.orders.length; i++) {
-                for (var j = 0; j < this.bulkOrders.orders[i].positions.length; j++) {
-                    main.push({
-                        "id": this.bulkOrders.orders[i].id, 
-                        "name": this.bulkOrders.orders[i].positions[j].name,
-                        "count": this.bulkOrders.orders[i].positions[j].count,
-                        "link": this.bulkOrders.orders[i].positions[j].link,
-                        "usernameTo": this.bulkOrders.orders[i].usernameTo,
-                        "description": this.bulkOrders.orders[i].positions[j].description
-                    })
-                }
-            }
+            // Generate worksheet and workbook 
+            const worksheet = XLSX.utils.json_to_sheet(rows);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Dates");
 
-            main = main.map((item) => {
-                return Object.values(item).toString();
-            })
+            // Headers
+            XLSX.utils.sheet_add_aoa(worksheet, [["Артикль","Суммарное количество","Ссылка на товар"]], { origin: "A1" });
 
-            this.startCVSDownload(header, main, false);
+            workbook.sheets().forEach((sheet) => {
+                sheet.usedRange.style({
+                    fontFamily: "Arial",
+                    verticalAlignment: "center",
+                });
+            });
+            // Сalculate column width
+            // const max_width = rows.reduce((w, r) => Math.max(w, r.link.length), 10);
+            // worksheet["!cols"] = [ { wch: max_width } ];
+
+            // Write file
+            XLSX.writeFile(workbook, "Сводный заказ.xlsx", { compression: true });
+
         },
-
-        loadBulk() {
-            const header = ["Артикль","Суммарное количество","Ссылка на товар"]
-
-            const main = this.bulkOrders.bulk.map((item) => {
-                return Object.values(item).toString();
-            })
-
-            this.startCVSDownload(header, main, true);
-        },
-
-        startCVSDownload(header, main, isBulk) {
-            const cvs = [header, ...main].join('\n');
-            const blob = new Blob([cvs], { type: 'application/csv'} );
-
-            const url = URL.createObjectURL(blob);
-
-            let a = document.createElement('a');
-            a.download = isBulk ? 'Товары вместе.cvs' : "Сводный заказ.cvs";
-            a.href = url
-            a.style.display = 'none';
-
-            document.body.appendChild(a);
-
-            a.click();
-            a.remove()
-            URL.revokeObjectURL(url);
-        },
-
 
         //-------------------//
         //    Other stuff    //
