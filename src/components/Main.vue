@@ -88,19 +88,20 @@
             <div class="title">
                 <p v-if="editing == false"> Новый товар </p>
                 <p v-if="editing == true"> Номер заказа: {{order.id}} </p>
-                <img class="closeEditorButton" src="icons/close.png" @click="selectedOrderId = undefined; ModalWindows.deleteModals();"/>
+                <img class="closeEditorButton" src="../assets/icons/close.png" @click="selectedOrderId = undefined; ModalWindows.deleteModals();"/>
             </div>
             <div id="productList" class="productList">
                 <form class="product" v-for="product in order.positions" :key="product">
-                    <input class="name" required minlength="4" maxlength="256" placeholder="Название товара" v-model="product.name">
-                    <img class="deleteProduct" src="icons/close.png" @click="deleteProduct($event);"/>
+                    <input class="name" required minlength="4" placeholder="Название товара" v-model="product.name">
+                    <img class="deleteProduct" src="../assets/icons/close.png" @click="deleteProduct($event);"/>
                     <div class="productInfo">
-                        <input class="link" type="url" required minlength="4" maxlength="256" placeholder="Ссылка на товар" v-model="product.link">
+                        <input class="link" type="url" required minlength="4" maxlength="255" placeholder="Ссылка на товар" v-model="product.link"> 
+                        <p class="linkCounter"> Кол-во символов: {{ product.link.length }} </p>
                         <br>
-                        <input class="desc" required minlength="4" maxlength="512" placeholder="Описание (не менее 4 символов)" v-model="product.description">
+                        <input class="desc" required minlength="4" maxlength="512" placeholder="Описание" v-model="product.description">
                         <br>
                         <input class="count" required type="number" min="1" max="1000" placeholder="Количество" v-model="product.count">
-                        <input class="article" required type="number" minlength="1" maxlength="20" placeholder="Артикль" v-model="product.article">
+                        <input class="article" required type="number" minlength="1" maxlength="20" placeholder="Артикул" v-model="product.article">
                     </div>
                 </form>
                 <div class="noProducts" v-if="productExist == false"> 
@@ -126,12 +127,21 @@
                     <option>Выдан</option>
                 </select>
             </div>
+            <div class="orderHint">
+                <p> Памятка по заполнению: </p>
+                <ul>
+                    <li> Все поля должны быть заполнены. </li>
+                    <li> "Название" и "Описание" должно иметь от 4 символов.</li>
+                    <li> "Ссылка на товар" должно иметь URL и не быть больше 256 символов</li>
+                    <li> "Артикул" и "Количество" принимают числовой формат </li>
+                </ul>
+            </div>
         </div>
         
         <div class="bulkOrder" v-if="selectedOrderId == undefined && bulk == true">
             <div class="title">
                 <p> Сводный заказ </p>
-                <img class="closeEditorButton" src="icons/close.png" @click="bulk = false;"/>
+                <img class="closeEditorButton" src="../assets/icons/close.png" @click="bulk = false;"/>
             </div>
             <div class="content">
                 <table class="bulkTableHeader">
@@ -160,7 +170,7 @@
             </div>
             <div class="content">
                 <table class="bulkTableHeader">
-                    <td class="articleSummary"> <b> Артикль </b> </td>
+                    <td class="articleSummary"> <b> Артикул </b> </td>
                     <td class="linkSummary"> <b> Ссылка на товар </b> </td>
                     <td class="countSummary">  <b> Суммарное кол-во </b> </td>
                 </table>
@@ -172,7 +182,7 @@
                     </tr>
                 </table>
             </div>
-            <button @click="loadBulk();" class="loadBulk"> Загрузить </button>
+            <button @click="loadBulk(); loadTotal();" class="loadBulk"> Загрузить </button>
         </div> 
 
         <div class="nothingSelected" v-if="selectedOrderId == undefined && bulk == false">
@@ -204,13 +214,13 @@ export default {
     data() {
         return {
             // Get all orders
-            getOrdersLink: 'https://auth.fisb/chancery/api/employee/orders/all',
+            getOrdersLink: 'https://portal.npf-isb.ru/chancery/api/employee/orders/all',
             selectedOrderStatusList: 'Мои заказы',
 
             ordersList: () => [],
 
             // Get one order by ID
-            getOrderByIdLink: 'https://auth.fisb/chancery/api/employee/orders/all/',
+            getOrderByIdLink: 'https://portal.npf-isb.ru/chancery/api/employee/orders/all/',
 
             selectedOrderId: undefined,
             order: [{}],
@@ -238,7 +248,7 @@ export default {
 
             this.order.positions = [{
                 name: "",
-                link: "https://link.ru",
+                link: "",
                 description: "",
                 count: "",
                 article: ""
@@ -252,7 +262,7 @@ export default {
         addNewProduct() {
             this.order.positions.push({
                 name: "",
-                link: "https://link.ru",
+                link: "",
                 description: "",
                 count: "",
                 article: ""
@@ -335,7 +345,7 @@ export default {
             }
 
             if (this.userData.role == 'globaladmin') {
-                this.getOrdersLink = 'https://auth.fisb/chancery/api/manager/orders/all'
+                this.getOrdersLink = 'https://portal.npf-isb.ru/chancery/api/manager/orders/all'
             }
 
             setTimeout(() => {
@@ -351,7 +361,7 @@ export default {
             this.editing = true;
 
             if (this.userData.role == 'globaladmin') {
-                this.getOrderByIdLink = 'https://auth.fisb/chancery/api/manager/orders/all/'
+                this.getOrderByIdLink = 'https://portal.npf-isb.ru/chancery/api/manager/orders/all/'
             }
             axios.get(this.getOrderByIdLink+this.selectedOrderId, { withCredentials: true })
             .then((res) => {
@@ -388,7 +398,7 @@ export default {
         async createOrder() {
             if (await this.checkValidation()) {
                 try {
-                    await axios.post('https://auth.fisb/chancery/api/employee/orders/all', this.getProducts(), { withCredentials: true })
+                    await axios.post('https://portal.npf-isb.ru/chancery/api/employee/orders/all', this.getProducts(), { withCredentials: true })
                     .then((res) => {
                         console.log(res);
                         ModalWindows.showModal("Заказ создан!", true);
@@ -420,7 +430,7 @@ export default {
 
         async deleteOrderByID() {
             if (this.userData.role == 'globaladmin') {
-                this.getOrderByIdLink = 'https://auth.fisb/chancery/api/manager/orders/all/';
+                this.getOrderByIdLink = 'https://portal.npf-isb.ru/chancery/api/manager/orders/all/';
             }
 
             try {
@@ -440,7 +450,7 @@ export default {
         async deleteOrders() {
             console.log(this.userData.selectedOrders);
             try {
-                await axios.delete('https://auth.fisb/chancery/api/manager/orders/delete-several', { "data": { "ids": this.userData.selectedOrders } }, { withCredentials: true })
+                await axios.delete('https://portal.npf-isb.ru/chancery/api/manager/orders/delete-several', { "data": { "ids": this.userData.selectedOrders } }, { withCredentials: true })
                 .then(() => {
                     ModalWindows.showModal("Заказы удалены!", true)
                     this.userData.selectedOrders = [];
@@ -458,13 +468,13 @@ export default {
                 let linkChangeOrderStatus = '';
                 switch (selectedOrderStatus) {
                     case "Обрабатывается":
-                        linkChangeOrderStatus = 'https://auth.fisb/chancery/api/manager/orders/np';
+                        linkChangeOrderStatus = 'https://portal.npf-isb.ru/chancery/api/manager/orders/np';
                         break;
                     case "Обработан":
-                        linkChangeOrderStatus = 'https://auth.fisb/chancery/api/manager/orders/ip';
+                        linkChangeOrderStatus = 'https://portal.npf-isb.ru/chancery/api/manager/orders/ip';
                         break;
                     case "Выдан":
-                        linkChangeOrderStatus = 'https://auth.fisb/chancery/api/manager/orders/p';
+                        linkChangeOrderStatus = 'https://portal.npf-isb.ru/chancery/api/manager/orders/p';
                         break;
                 }
 
@@ -486,13 +496,13 @@ export default {
             let linkChangeOrderStatus = '';
             switch (selectedOrderStatus) {
                 case "Обрабатывается":
-                    linkChangeOrderStatus = 'https://auth.fisb/chancery/api/manager/orders/np';
+                    linkChangeOrderStatus = 'https://portal.npf-isb.ru/chancery/api/manager/orders/np';
                     break;
                 case "Обработан":
-                    linkChangeOrderStatus = 'https://auth.fisb/chancery/api/manager/orders/ip';
+                    linkChangeOrderStatus = 'https://portal.npf-isb.ru/chancery/api/manager/orders/ip';
                     break;
                 case "Выдан":
-                    linkChangeOrderStatus = 'https://auth.fisb/chancery/api/manager/orders/p';
+                    linkChangeOrderStatus = 'https://portal.npf-isb.ru/chancery/api/manager/orders/p';
                     break;
             }
 
@@ -512,10 +522,10 @@ export default {
             this.selectedOrderId = undefined;
             this.bulk = true;
             try {
-                await axios.patch('https://auth.fisb/chancery/api/manager/orders/np', { "ids": this.userData.selectedOrders }, { withCredentials: true })
+                await axios.patch('https://portal.npf-isb.ru/chancery/api/manager/orders/np', { "ids": this.userData.selectedOrders }, { withCredentials: true })
                 .then(async () => {
                     try {
-                        await axios.get('https://auth.fisb/chancery/api/manager/orders/bulk')
+                        await axios.get('https://portal.npf-isb.ru/chancery/api/manager/orders/bulk')
                         .then((res) => {
                             this.bulkOrders = res.data;
                             console.log(res.data);
@@ -528,7 +538,7 @@ export default {
             }
             catch (e) {
                 try {
-                    await axios.get('https://auth.fisb/chancery/api/manager/orders/bulk')
+                    await axios.get('https://portal.npf-isb.ru/chancery/api/manager/orders/bulk')
                     .then((res) => {
                         this.bulkOrders = res.data;
                         console.log(res.data);
@@ -540,31 +550,155 @@ export default {
             }
         },
 
-        async loadBulk() {
+        async loadTotal() {
             // Flatten objects
             const rows = this.bulkOrders.bulk.map(row => ({
                 article: row.article,
-                count: row.count,
                 link: row.link,
+                count: row.count,
             }));
 
             // Generate worksheet and workbook 
             const worksheet = XLSX.utils.json_to_sheet(rows);
             const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "Dates");
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Товары вместе");
 
             // Headers
-            XLSX.utils.sheet_add_aoa(worksheet, [["Артикль","Суммарное количество","Ссылка на товар"]], { origin: "A1" });
+            XLSX.utils.sheet_add_aoa(worksheet, [["Артикул","Ссылка на товар","Суммарное количество"]], { origin: "A1" });
 
-            workbook.sheets().forEach((sheet) => {
-                sheet.usedRange.style({
-                    fontFamily: "Arial",
-                    verticalAlignment: "center",
-                });
-            });
-            // Сalculate column width
-            // const max_width = rows.reduce((w, r) => Math.max(w, r.link.length), 10);
-            // worksheet["!cols"] = [ { wch: max_width } ];
+            for (let i in worksheet) {
+                if (typeof(worksheet[i]) != "object") continue;
+                let cell = XLSX.utils.decode_cell(i);
+
+                worksheet[i].s = { // styling for all cells
+                    font: {
+                        name: "Calibri",
+                        color: { rgb: "2767C9" },
+                    },
+                    alignment: {
+                        vertical: "center",
+                        horizontal: "center",
+                        wrapText: '1',
+                    },
+                };
+
+                if (cell.r == 0 ) { // first row
+                    worksheet[i].s = {
+                        font: {
+                            name: "Calibri",
+                            bold: true,
+                            color: { rgb: "2767C9" },
+                        },
+
+                        alignment: {
+                            vertical: "center",
+                            horizontal: "center",
+                            wrapText: '1',
+                        },
+
+                        border: {
+                            bottom: {
+                                style: "thick",
+                                color: { rgb: "2767C9" }
+                            }
+                        }
+                    };
+                }
+            }
+
+            worksheet['!cols'] = [
+                { 'width': 15  },
+                { 'width': 200 },
+                { 'width': 15  },
+            ];
+
+            // Write file
+            XLSX.writeFile(workbook, "Товары вместе.xlsx", { compression: true });
+
+        },
+
+        async loadBulk() {
+            // Flatten objects
+            let rows = [];
+            for ( let i = 0; i < this.bulkOrders.orders.length; i++ ) {
+                for ( let j = 0; j < this.bulkOrders.orders[i].positions.length; j++ ) {
+                    rows.push({
+                        id: this.bulkOrders.orders[i].id,
+                        name: this.bulkOrders.orders[i].positions[j].name,
+                        count: this.bulkOrders.orders[i].positions[j].count,
+                        link: this.bulkOrders.orders[i].positions[j].link,
+                        usernameTo: this.bulkOrders.orders[i].usernameTo,
+                        description: this.bulkOrders.orders[i].positions[j].description
+                    })
+                }
+            }
+
+            // const rows = this.bulkOrders.orders.map(row => ({
+            //     id: row.id,
+            //     name: row.positions[0].name,
+            //     count: row.positions[0].count,
+            //     link: row.positions[0].link,
+            //     usernameTo: row.usernameTo,
+            //     description: row.positions[0].description
+            // }));
+
+            // Generate worksheet and workbook 
+            const worksheet = XLSX.utils.json_to_sheet(rows);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Сводный заказ");
+
+            // Headers
+            XLSX.utils.sheet_add_aoa(worksheet, [["№ п/п", "Номенклатура", "Кол-во", "Ссылка на товар", "Кому требуется", "Обоснование (комментарий)"]], { origin: "A1" });
+
+            for (let i in worksheet) {
+                if (typeof(worksheet[i]) != "object") continue;
+                let cell = XLSX.utils.decode_cell(i);
+
+                worksheet[i].s = { // styling for all cells
+                    font: {
+                        name: "Calibri",
+                        color: { rgb: "2767C9" },
+                    },
+                    alignment: {
+                        vertical: "center",
+                        horizontal: "center",
+                        wrapText: '1',
+                    },
+                };
+
+                if (cell.r == 0 ) { // first row
+                    worksheet[i].s = {
+                        font: {
+                            name: "Calibri",
+                            bold: true,
+                            color: { rgb: "2767C9" },
+                        },
+
+                        alignment: {
+                            vertical: "center",
+                            horizontal: "center",
+                            wrapText: '1',
+                        },
+
+                        border: {
+                            bottom: {
+                                style: "thick",
+                                color: { rgb: "2767C9" }
+                            }
+                        }
+                    };
+                }
+            }
+
+            worksheet['!cols'] = [
+                { 'width': 15 },
+                { 'width': 60 },
+                { 'width': 15 },
+                { 'width': 60 },
+                { 'width': 30 },
+                { 'width': 30 },
+                { 'width': 30 },
+            ];
 
             // Write file
             XLSX.writeFile(workbook, "Сводный заказ.xlsx", { compression: true });
@@ -1022,7 +1156,7 @@ export default {
         overflow-y: scroll;
         overflow-x: hidden;
 
-        height: 100%;
+        height: 850px;
         width: 100%;
     }
     .mainSection .editor::-webkit-scrollbar-track {
@@ -1108,6 +1242,8 @@ export default {
     .bulkOrder .content .link {
         width: 250px;
         max-width: 250px;
+
+        word-wrap: break-word;
     }
 
     .bulkOrder .content .articleSummary {
@@ -1118,6 +1254,8 @@ export default {
     .bulkOrder .content .linkSummary {
         width: 750px;
         max-width: 750px;
+
+        word-wrap: break-word;
     }
 
     .bulkOrder .content .usernameTo {
@@ -1182,6 +1320,18 @@ export default {
     .productList .product .productInfo{
         margin-left: 50px;
     }
+
+    .productInfo .linkCounter {
+        margin-top: 2px;
+        margin-left: 20px;
+        margin-bottom: 0;
+
+        font-family: var(--main-font);
+        font-size: 13px;
+
+        color: var(--main-color);
+    }
+
     .productList .product .deleteProduct {
         all: unset;
 
@@ -1235,13 +1385,14 @@ export default {
         width: 600px;
     }
     .productList .product .desc {
+        margin-top: 0px;
         width: 800px;
     }
     .productList .product .count {
-        width: 100px;
+        width: 110px;
     }
     .productList .product .article {
-        width: 100px;
+        width: 110px;
     }
 
     .productList .noProducts {
@@ -1437,6 +1588,12 @@ export default {
     }
     .selectOrderStatus:focus {
         outline: none;
+    }
+
+    .orderHint {
+        margin: 10px 0 40px 30px;
+        color: var(--main-color);
+        font-family: var(--main-font);
     }
 
     .mainSection .nothingSelected {

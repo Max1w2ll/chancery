@@ -4,6 +4,7 @@
             <p class="menuTitle"> Меню </p>
         </div>
         <div class="userSection">
+            <a href="./Памятка_Веб-сервис Канцелярия.pdf" target="_blank" class="appHint"> Памятка </a>
             <p class="corpPortal" @click="goToPortal()"> Корпоративный портал </p>
         </div>
     </div>
@@ -11,7 +12,7 @@
 
 <script>
 // import axios from 'axios';  
-import modalWindows from  '@/components/ModalWindows.js';
+import modalWindows from '@/components/ModalWindows.js';
 
 export default {
     name: 'Header',
@@ -31,7 +32,7 @@ export default {
 
     methods: {
         goToPortal() {
-            location.href = "https://auth.fisb/";
+            location.href = "https://portal.npf-isb.ru/";
         },
     },
 }
@@ -109,7 +110,7 @@ export default {
         background: var(--sub-color);
     }
     
-    .userSection p {
+    .userSection .appHint, .userSection .corpPortal {
         margin: 0;
         padding-right: 30px;
         padding-left: 30px;
@@ -122,6 +123,7 @@ export default {
 
         font-family: var(--main-font);
         font-size: 18px;
+        text-decoration: none;
 
         color: var(--text-color);
 
@@ -129,7 +131,7 @@ export default {
 
         transition: all .3s ease-in-out;
     }
-    .userSection p:hover {
+    .userSection .appHint:hover, .userSection .corpPortal:hover {
         background: var(--text-color);
         color: var(--main-color);
     }

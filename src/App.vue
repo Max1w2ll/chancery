@@ -24,10 +24,10 @@ export default {
   data() {
     return {
       // Authorization 
-      authLink: 'https://auth.fisb/auth/api/ldapauth',
+      authLink: 'https://portal.npf-isb.ru/auth/api/ldapauth',
 
       // User information
-      getUserLink: 'https://auth.fisb/chancery/api/auth/userinfo',
+      getUserLink: 'https://portal.npf-isb.ru/chancery/api/auth/userinfo',
 
       userData: {
         department: 'department',
