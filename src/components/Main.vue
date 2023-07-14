@@ -285,8 +285,8 @@ export default {
                 let product = {
                     "name":        productList[productCounter].childNodes[0].value.toString(),              // Product name
                     "link":        productList[productCounter].childNodes[2].childNodes[0].value,           // Product link
-                    "description": productList[productCounter].childNodes[2].childNodes[2].value,           // Product description
-                    "count":       parseInt(productList[productCounter].childNodes[2].childNodes[4].value), // Product count
+                    "description": productList[productCounter].childNodes[2].childNodes[3].value,           // Product description
+                    "count":       parseInt(productList[productCounter].childNodes[2].childNodes[5].value), // Product count
                     "article":     productList[productCounter].childNodes[2].childNodes[5].value            // Product count
                 }
                 positions.push(product);
