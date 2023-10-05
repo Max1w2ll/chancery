@@ -95,7 +95,7 @@
                     <input class="name" required minlength="4" placeholder="Название товара" v-model="product.name">
                     <img class="deleteProduct" src="../assets/icons/close.png" @click="deleteProduct($event);"/>
                     <div class="productInfo">
-                        <input class="link" type="url" required minlength="4" maxlength="255" placeholder="Ссылка на товар" v-model="product.link"> 
+                        <input class="link" type="url" required minlength="4" placeholder="Ссылка на товар" v-model="product.link"> 
                         <p class="linkCounter"> Кол-во символов: {{ product.link.length }} </p>
                         <br>
                         <input class="desc" required minlength="4" maxlength="512" placeholder="Описание" v-model="product.description">
@@ -132,7 +132,7 @@
                 <ul>
                     <li> Все поля должны быть заполнены. </li>
                     <li> "Название" и "Описание" должно иметь от 4 символов.</li>
-                    <li> "Ссылка на товар" должно иметь URL и не быть больше 256 символов</li>
+                    <li> "Ссылка на товар" должно иметь URL и не быть больше 255 символов</li>
                     <li> "Артикул" и "Количество" принимают числовой формат </li>
                 </ul>
             </div>
@@ -287,7 +287,7 @@ export default {
                     "link":        productList[productCounter].childNodes[2].childNodes[0].value,           // Product link
                     "description": productList[productCounter].childNodes[2].childNodes[3].value,           // Product description
                     "count":       parseInt(productList[productCounter].childNodes[2].childNodes[5].value), // Product count
-                    "article":     productList[productCounter].childNodes[2].childNodes[5].value            // Product count
+                    "article":     productList[productCounter].childNodes[2].childNodes[6].value            // Product count
                 }
                 positions.push(product);
             }
